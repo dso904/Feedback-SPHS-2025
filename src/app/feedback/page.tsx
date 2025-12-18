@@ -12,6 +12,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { USER_ROLES, RATING_LABELS, DEFAULT_QUESTIONS } from "@/lib/types"
 import { SuccessAnimation } from "@/components/success-animation"
+import ReCAPTCHA from "react-google-recaptcha"
 
 interface Subject {
     id: string
@@ -26,6 +27,8 @@ const STEPS = [
     { id: 4, title: "Confirm" },
 ]
 
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+
 export default function FeedbackPage() {
     const [currentStep, setCurrentStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
@@ -33,6 +36,7 @@ export default function FeedbackPage() {
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [loadingSubjects, setLoadingSubjects] = useState(true)
     const [countdown, setCountdown] = useState(5)
+    const [captchaVerified, setCaptchaVerified] = useState(false)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -273,7 +277,11 @@ export default function FeedbackPage() {
                                     />
                                 )}
                                 {currentStep === 4 && (
-                                    <StepFour formData={formData} />
+                                    <StepFour
+                                        formData={formData}
+                                        onCaptchaChange={(verified) => setCaptchaVerified(verified)}
+                                        siteKey={RECAPTCHA_SITE_KEY}
+                                    />
                                 )}
                             </motion.div>
                         </AnimatePresence>
@@ -302,8 +310,8 @@ export default function FeedbackPage() {
                             ) : (
                                 <Button
                                     onClick={handleSubmit}
-                                    disabled={submitting}
-                                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
+                                    disabled={submitting || !captchaVerified}
+                                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {submitting ? (
                                         <>
@@ -467,10 +475,22 @@ function StepThree({
     )
 }
 
-// Step 4: Confirmation
-function StepFour({ formData }: { formData: { userRole: string; subject: string; ratings: Record<string, number>; comment: string } }) {
+// Step 4: Confirmation with CAPTCHA
+function StepFour({
+    formData,
+    onCaptchaChange,
+    siteKey
+}: {
+    formData: { userRole: string; subject: string; ratings: Record<string, number>; comment: string }
+    onCaptchaChange: (verified: boolean) => void
+    siteKey: string
+}) {
     const avgRating = Object.values(formData.ratings).reduce((a, b) => a + b, 0) / 6
     const percent = Math.round((avgRating / 5) * 100)
+
+    const handleCaptcha = (token: string | null) => {
+        onCaptchaChange(!!token)
+    }
 
     return (
         <div>
@@ -518,6 +538,22 @@ function StepFour({ formData }: { formData: { userRole: string; subject: string;
                         <p className="text-white/80 text-sm">{formData.comment}</p>
                     </div>
                 )}
+
+                {/* reCAPTCHA */}
+                <div className="bg-white/5 rounded-xl p-4">
+                    <p className="text-white/60 text-sm mb-3">Verify you&apos;re human</p>
+                    <div className="flex justify-center">
+                        {siteKey ? (
+                            <ReCAPTCHA
+                                sitekey={siteKey}
+                                onChange={handleCaptcha}
+                                theme="dark"
+                            />
+                        ) : (
+                            <p className="text-yellow-400 text-sm">⚠️ reCAPTCHA not configured</p>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     )
