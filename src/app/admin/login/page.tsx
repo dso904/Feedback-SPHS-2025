@@ -141,15 +141,6 @@ export default function AdminLoginPage() {
                                 )}
                             </Button>
                         </form>
-
-                        <div className="mt-6 pt-6 border-t border-white/10">
-                            <p className="text-center text-white/40 text-sm">
-                                Default credentials for testing:
-                            </p>
-                            <p className="text-center text-white/60 text-sm mt-1 font-mono">
-                                admin@southpoint.edu / admin123
-                            </p>
-                        </div>
                     </CardContent>
                 </Card>
 
