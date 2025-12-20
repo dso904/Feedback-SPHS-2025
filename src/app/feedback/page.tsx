@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -12,6 +13,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { USER_ROLES, RATING_LABELS, DEFAULT_QUESTIONS } from "@/lib/types"
 import { SuccessAnimation } from "@/components/success-animation"
+import { hasSubmittedFeedback, markFeedbackSubmitted } from "@/lib/feedback-guard"
 import ReCAPTCHA from "react-google-recaptcha"
 
 interface Subject {
@@ -30,6 +32,7 @@ const STEPS = [
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
 
 export default function FeedbackPage() {
+    const router = useRouter()
     const [currentStep, setCurrentStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
@@ -37,6 +40,7 @@ export default function FeedbackPage() {
     const [loadingSubjects, setLoadingSubjects] = useState(true)
     const [countdown, setCountdown] = useState(5)
     const [captchaVerified, setCaptchaVerified] = useState(false)
+    const [checkingStatus, setCheckingStatus] = useState(true)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -45,6 +49,29 @@ export default function FeedbackPage() {
         ratings: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0 },
         comment: "",
     })
+
+    // Check if user has already submitted feedback (only if protection is enabled)
+    useEffect(() => {
+        const checkProtectionAndSubmission = async () => {
+            try {
+                // First check if protection is enabled in admin settings
+                const res = await fetch("/api/settings/protection")
+                const data = await res.json()
+
+                // Only enforce guard if protection is enabled
+                if (data.enabled && hasSubmittedFeedback()) {
+                    router.replace("/already-submitted")
+                } else {
+                    setCheckingStatus(false)
+                }
+            } catch {
+                // If API fails, allow access (fail open for testing)
+                setCheckingStatus(false)
+            }
+        }
+
+        checkProtectionAndSubmission()
+    }, [router])
 
     useEffect(() => {
         fetchSubjects()
@@ -94,21 +121,21 @@ export default function FeedbackPage() {
 
             if (!res.ok) throw new Error("Failed to submit")
 
+            // Mark as submitted in localStorage/cookies to prevent re-submission
+            markFeedbackSubmitted()
+
             // Show thank you screen
             setShowSuccess(true)
             setCountdown(5)
 
-            // Start countdown to close tab
+            // Start countdown then redirect to locked completion page
             const interval = setInterval(() => {
                 setCountdown(prev => {
                     if (prev <= 1) {
                         clearInterval(interval)
-                        // Try to close the tab
-                        window.close()
-                        // Fallback: redirect to home if tab can't be closed
-                        setTimeout(() => {
-                            window.location.href = "/"
-                        }, 500)
+                        // Redirect to locked completion page
+                        // Using replace() to prevent back navigation
+                        window.location.replace("/complete")
                         return 0
                     }
                     return prev - 1
@@ -119,6 +146,15 @@ export default function FeedbackPage() {
         } finally {
             setSubmitting(false)
         }
+    }
+
+    // Show loading while checking submission status
+    if (checkingStatus) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+        )
     }
 
     // If showing success, render thank you screen
@@ -185,7 +221,7 @@ export default function FeedbackPage() {
                         transition={{ delay: 0.7 }}
                         className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 inline-block"
                     >
-                        <p className="text-white/50 text-sm">This window will close in</p>
+                        <p className="text-white/50 text-sm">Redirecting in</p>
                         <p className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                             {countdown} seconds
                         </p>
@@ -540,19 +576,17 @@ function StepFour({
                 )}
 
                 {/* reCAPTCHA */}
-                <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-white/60 text-sm mb-3">Verify you&apos;re human</p>
-                    <div className="flex justify-center">
-                        {siteKey ? (
-                            <ReCAPTCHA
-                                sitekey={siteKey}
-                                onChange={handleCaptcha}
-                                theme="dark"
-                            />
-                        ) : (
-                            <p className="text-yellow-400 text-sm">⚠️ reCAPTCHA not configured</p>
-                        )}
-                    </div>
+                <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center">
+                    <p className="text-white/60 text-sm mb-3 text-center">Verify you&apos;re human</p>
+                    {siteKey ? (
+                        <ReCAPTCHA
+                            sitekey={siteKey}
+                            onChange={handleCaptcha}
+                            theme="dark"
+                        />
+                    ) : (
+                        <p className="text-yellow-400 text-sm">⚠️ reCAPTCHA not configured</p>
+                    )}
                 </div>
             </div>
         </div>

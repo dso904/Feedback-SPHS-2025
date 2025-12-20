@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock, User, Loader2, CheckCircle } from "lucide-react"
+import { Lock, User, Loader2, CheckCircle, Shield, AlertTriangle } from "lucide-react"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { toast } from "sonner"
 
@@ -19,11 +19,54 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(false)
     const [errors, setErrors] = useState({ current: "", new: "", confirm: "" })
 
+    // Protection toggle state
+    const [protectionEnabled, setProtectionEnabled] = useState(false)
+    const [protectionLoading, setProtectionLoading] = useState(true)
+    const [protectionUpdating, setProtectionUpdating] = useState(false)
+
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/admin/login")
         }
     }, [status, router])
+
+    // Fetch protection setting on mount
+    useEffect(() => {
+        fetchProtectionSetting()
+    }, [])
+
+    const fetchProtectionSetting = async () => {
+        try {
+            const res = await fetch("/api/settings/protection")
+            const data = await res.json()
+            setProtectionEnabled(data.enabled || false)
+        } catch (error) {
+            console.error("Failed to fetch protection setting:", error)
+        } finally {
+            setProtectionLoading(false)
+        }
+    }
+
+    const toggleProtection = async () => {
+        setProtectionUpdating(true)
+        try {
+            const newValue = !protectionEnabled
+            const res = await fetch("/api/settings/protection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enabled: newValue }),
+            })
+
+            if (!res.ok) throw new Error("Failed to update")
+
+            setProtectionEnabled(newValue)
+            toast.success(newValue ? "Feedback protection ENABLED" : "Feedback protection DISABLED")
+        } catch {
+            toast.error("Failed to update protection setting")
+        } finally {
+            setProtectionUpdating(false)
+        }
+    }
 
     const validatePasswords = () => {
         const newErrors = { current: "", new: "", confirm: "" }
@@ -108,10 +151,74 @@ export default function SettingsPage() {
         <AdminSidebar>
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-1">Settings</h1>
-                <p className="text-slate-600 dark:text-white/60">Manage your account settings</p>
+                <p className="text-slate-600 dark:text-white/60">Manage your account and system settings</p>
             </motion.div>
 
             <div className="max-w-2xl space-y-6">
+                {/* Feedback Protection Toggle Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5 overflow-hidden">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
+                                <Shield className="w-5 h-5 text-amber-500" />
+                                Feedback Protection
+                            </CardTitle>
+                            <CardDescription className="text-slate-500 dark:text-white/40">
+                                Control whether users can submit multiple feedbacks
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-white/5 rounded-xl">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        {protectionEnabled ? (
+                                            <span className="flex items-center gap-1.5 text-green-500 font-semibold">
+                                                <CheckCircle className="w-4 h-4" />
+                                                Protection ENABLED
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 text-amber-500 font-semibold">
+                                                <AlertTriangle className="w-4 h-4" />
+                                                Protection DISABLED
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-slate-500 dark:text-white/50 text-sm">
+                                        {protectionEnabled
+                                            ? "Users cannot submit multiple feedbacks from the same device."
+                                            : "Users can submit unlimited feedbacks (testing mode)."}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={toggleProtection}
+                                    disabled={protectionLoading || protectionUpdating}
+                                    className={`relative w-14 h-8 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${protectionEnabled ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"
+                                        } ${protectionUpdating ? "opacity-50 cursor-wait" : "cursor-pointer"}`}
+                                >
+                                    <span
+                                        className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${protectionEnabled ? "translate-x-6" : "translate-x-0"
+                                            }`}
+                                    >
+                                        {protectionUpdating && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                                    </span>
+                                </button>
+                            </div>
+
+                            {/* Info box */}
+                            <div className={`mt-4 p-3 rounded-lg text-sm ${protectionEnabled
+                                    ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400"
+                                    : "bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400"
+                                }`}>
+                                {protectionEnabled ? (
+                                    <p><strong>Exhibition Mode:</strong> Duplicate feedback prevention is active. Enable this during the actual exhibition.</p>
+                                ) : (
+                                    <p><strong>Testing Mode:</strong> Multiple feedbacks allowed for testing purposes. Remember to enable protection before the exhibition!</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
                 {/* Profile Card */}
                 <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
                     <CardHeader>
