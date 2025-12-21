@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock, Mail, Loader2, Shield, ArrowLeft, Cpu, Zap } from "lucide-react"
+import { Lock, Mail, Loader2, Shield, ArrowLeft, Cpu, Zap, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -16,6 +16,7 @@ export default function AdminLoginPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -116,12 +117,12 @@ export default function AdminLoginPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="font-mono text-xs text-white/60 uppercase tracking-wider flex items-center gap-2">
                                     <Mail className="w-3 h-3 text-cyan-400" />
-                                    Operator ID
+                                    Email ID
                                 </Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="admin@southpoint.edu"
+                                    placeholder=""
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -134,15 +135,24 @@ export default function AdminLoginPage() {
                                     <Lock className="w-3 h-3 text-purple-400" />
                                     Access Code
                                 </Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="input-futuristic h-12"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        className="input-futuristic h-12 pr-12"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-cyan-400 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
 
                             <Button

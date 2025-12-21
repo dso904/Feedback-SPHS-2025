@@ -45,7 +45,7 @@ import type { Feedback } from "@/lib/types"
 const NEON_COLORS = ["#00f0ff", "#a855f7", "#ff0080", "#00ff88", "#ff6b00"]
 
 // Animated counter hook
-function useAnimatedCounter(end: number, duration: number = 1500) {
+function useAnimatedCounter(end: number, duration: number = 2500) {
     const [count, setCount] = useState(0)
     const countRef = useRef(0)
 
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                     suffix="%"
                     color="purple"
                     href="/admin/feedback"
-                    delay={0.1}
+                    delay={0.2}
                 />
                 <DataModule
                     icon={<Zap className="w-5 h-5" />}

@@ -7,7 +7,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock, User, Loader2, CheckCircle, Shield, AlertTriangle, X, Settings, Cpu, Zap } from "lucide-react"
+import { Lock, User, Loader2, CheckCircle, Shield, AlertTriangle, X, Settings, Cpu, Zap, Eye, EyeOff } from "lucide-react"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { toast } from "sonner"
 
@@ -22,6 +22,9 @@ export default function SettingsPage() {
     const [protectionEnabled, setProtectionEnabled] = useState(false)
     const [protectionLoading, setProtectionLoading] = useState(true)
     const [protectionUpdating, setProtectionUpdating] = useState(false)
+
+    // Password visibility toggle (current and new share the same toggle)
+    const [showPassword, setShowPassword] = useState(false)
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -279,14 +282,23 @@ export default function SettingsPage() {
                         <form onSubmit={handleChangePassword} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="current" className="font-mono text-xs text-white/60 uppercase tracking-wider">Current Access Code</Label>
-                                <Input
-                                    id="current"
-                                    type="password"
-                                    value={passwords.current}
-                                    onChange={(e) => { setPasswords({ ...passwords, current: e.target.value }); setErrors({ ...errors, current: "" }) }}
-                                    placeholder="••••••••"
-                                    className={`input-futuristic ${errors.current ? "border-red-500" : ""}`}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="current"
+                                        type={showPassword ? "text" : "password"}
+                                        value={passwords.current}
+                                        onChange={(e) => { setPasswords({ ...passwords, current: e.target.value }); setErrors({ ...errors, current: "" }) }}
+                                        placeholder="••••••••"
+                                        className={`input-futuristic pr-12 ${errors.current ? "border-red-500" : ""}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-cyan-400 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                                 {errors.current && <p className="font-mono text-xs text-red-400">{errors.current}</p>}
                             </div>
 
@@ -294,7 +306,7 @@ export default function SettingsPage() {
                                 <Label htmlFor="new" className="font-mono text-xs text-white/60 uppercase tracking-wider">New Access Code</Label>
                                 <Input
                                     id="new"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={passwords.new}
                                     onChange={(e) => { setPasswords({ ...passwords, new: e.target.value }); setErrors({ ...errors, new: "" }) }}
                                     placeholder="••••••••"
