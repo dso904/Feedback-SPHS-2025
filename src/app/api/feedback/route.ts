@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { supabaseAdmin } from "@/lib/supabase-admin"
+import { getClientIP } from "@/lib/get-client-ip"
 
 // GET all feedback
 export async function GET(request: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { user_role, subject, q1, q2, q3, q4, q5, q6, comment } = body
+        const { user_role, subject, q1, q2, q3, q4, q5, q6, comment, fingerprint } = body
 
         // Validate required fields
         if (!user_role || !subject || !q1 || !q2 || !q3 || !q4 || !q5 || !q6) {
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Insert feedback
         const { data: feedback, error } = await supabase
             .from("feedback")
             .insert([{
@@ -66,6 +68,26 @@ export async function POST(request: NextRequest) {
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
+        }
+
+        // Log the submission for protection tracking (if fingerprint provided)
+        if (fingerprint) {
+            const clientIP = getClientIP(request)
+
+            try {
+                await supabaseAdmin
+                    .from("submission_logs")
+                    .insert({
+                        ip_address: clientIP,
+                        fingerprint_hash: fingerprint,
+                        user_agent: request.headers.get("user-agent") || "unknown",
+                        feedback_id: feedback.id,
+                        blocked: false
+                    })
+            } catch (logError) {
+                // Don't fail the submission if logging fails
+                console.error("Failed to log submission:", logError)
+            }
         }
 
         return NextResponse.json(feedback, { status: 201 })

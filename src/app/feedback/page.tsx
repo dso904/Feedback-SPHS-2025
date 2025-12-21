@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { USER_ROLES, RATING_LABELS, DEFAULT_QUESTIONS } from "@/lib/types"
 import { SuccessAnimation } from "@/components/success-animation"
 import { hasSubmittedFeedback, markFeedbackSubmitted } from "@/lib/feedback-guard"
+import { getDeviceFingerprint, storeFingerprint } from "@/lib/fingerprint"
 import ReCAPTCHA from "react-google-recaptcha"
 
 interface Subject {
@@ -37,9 +38,10 @@ export default function FeedbackPage() {
     const [showSuccess, setShowSuccess] = useState(false)
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [loadingSubjects, setLoadingSubjects] = useState(true)
-    const [countdown, setCountdown] = useState(5)
+    const [countdown, setCountdown] = useState(20)
     const [captchaVerified, setCaptchaVerified] = useState(false)
     const [checkingStatus, setCheckingStatus] = useState(true)
+    const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
         userRole: "",
@@ -51,14 +53,36 @@ export default function FeedbackPage() {
     useEffect(() => {
         const checkProtectionAndSubmission = async () => {
             try {
-                const res = await fetch("/api/settings/protection")
+                // Generate device fingerprint first
+                const fingerprint = await getDeviceFingerprint()
+                setDeviceFingerprint(fingerprint)
+
+                // Call protection check API - it handles the toggle internally
+                // If protection is OFF, it returns { allowed: true }
+                // If protection is ON, it checks fingerprint + localStorage
+                const res = await fetch("/api/protection/check", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ fingerprint })
+                })
                 const data = await res.json()
-                if (data.enabled && hasSubmittedFeedback()) {
+
+                // Only block if protection is enabled AND check failed
+                if (!data.allowed) {
+                    // Also check localStorage as a backup
+                    router.replace("/already-submitted")
+                } else if (data.reason === "protection_disabled") {
+                    // Protection is OFF - allow regardless of localStorage
+                    setCheckingStatus(false)
+                } else if (hasSubmittedFeedback()) {
+                    // Protection is ON and localStorage flag exists
                     router.replace("/already-submitted")
                 } else {
                     setCheckingStatus(false)
                 }
-            } catch {
+            } catch (error) {
+                console.error("Protection check failed:", error)
+                // On error, allow submission (fail open)
                 setCheckingStatus(false)
             }
         }
@@ -117,12 +141,17 @@ export default function FeedbackPage() {
                     q6: formData.ratings.q6,
                     comment: formData.comment,
                     percent,
+                    fingerprint: deviceFingerprint, // Include fingerprint for server-side logging
                 }),
             })
 
             if (!res.ok) throw new Error("Failed to submit")
 
+            // Mark as submitted in local storage AND store fingerprint
             markFeedbackSubmitted()
+            if (deviceFingerprint) {
+                storeFingerprint(deviceFingerprint)
+            }
             setShowSuccess(true)
         } catch {
             toast.error("Submission failed. Please try again.")
@@ -136,7 +165,8 @@ export default function FeedbackPage() {
         if (!showSuccess) return
 
         if (countdown <= 0) {
-            router.push("/")
+            // Redirect to complete page (has "close this page" functionality)
+            router.push("/complete")
             return
         }
 
@@ -159,63 +189,156 @@ export default function FeedbackPage() {
     }
 
     if (showSuccess) {
+        const emailSubject = encodeURIComponent("Inquiry about Website Development - From SPHS Exhibition")
+        const emailBody = encodeURIComponent(`Hello Team HackMinors,
+
+I saw your work at the South Point High School Platinum Exhibition 2025 and I'm impressed with the feedback system design.
+
+I would like to inquire about:
+[ ] Website Development
+[ ] Web Application
+[ ] UI/UX Design
+[ ] Other: ___________
+
+Please get back to me at your earliest convenience.
+
+Best regards,
+[Your Name]
+[Your Contact]`)
+        const mailtoLink = `mailto:teamhackminors@gmail.com?subject=${emailSubject}&body=${emailBody}`
+
         return (
             <div className="min-h-screen bg-[#050508] flex items-center justify-center p-4 relative overflow-hidden">
                 {/* Background */}
                 <div className="absolute inset-0">
                     <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[150px]" />
                     <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[150px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-pink-500/10 to-orange-500/10 rounded-full blur-[200px] animate-pulse" />
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
                 </div>
 
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="relative z-10 text-center max-w-lg"
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, type: "spring" }}
+                    className="relative z-10 w-full max-w-md"
                 >
-                    {/* Success Icon */}
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: "spring" }}
-                        className="relative mx-auto mb-8"
-                    >
-                        <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur-xl opacity-50 animate-pulse" />
-                        <div className="relative w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center border-2 border-white/20">
-                            <Check className="w-12 h-12 text-white" />
+                    {/* Main Card */}
+                    <div className="relative bg-[#0c0c16]/90 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden">
+                        {/* Top glow line */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500" />
+
+                        {/* Success Badge */}
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                            className="flex justify-center -mt-1 pt-6"
+                        >
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center border-4 border-[#0c0c16]">
+                                    <Check className="w-8 h-8 text-white" strokeWidth={3} />
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        <div className="p-6 pt-4 text-center">
+                            <motion.h2
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="font-orbitron text-xl font-bold text-white mb-2"
+                            >
+                                Thank You!
+                            </motion.h2>
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.4 }}
+                                className="font-mono text-sm text-white/50 mb-6"
+                            >
+                                Your feedback has been recorded successfully
+                            </motion.p>
+
+                            {/* Advertisement Section */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="relative p-5 rounded-xl bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 border border-purple-500/20 mb-6"
+                            >
+                                {/* Sparkle decorations */}
+                                <div className="absolute top-2 right-3 text-yellow-400 text-lg animate-pulse">✨</div>
+                                <div className="absolute bottom-2 left-3 text-cyan-400 text-sm animate-pulse delay-300">⚡</div>
+
+                                <p className="font-mono text-xs text-purple-400 uppercase tracking-widest mb-3">
+                                    Liked the website design?
+                                </p>
+                                <p className="text-white/80 text-sm mb-4 leading-relaxed">
+                                    This feedback system was crafted by <span className="text-cyan-400 font-semibold">Team HackMinors</span> —
+                                    passionate students building amazing digital experiences.
+                                </p>
+                                <p className="font-mono text-xs text-white/40">
+                                    We create websites, web apps, and UI/UX designs
+                                </p>
+                            </motion.div>
+
+                            {/* Action Buttons */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                                className="space-y-3"
+                            >
+                                {/* Contact Us Button */}
+                                <a
+                                    href={mailtoLink}
+                                    className="group relative w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold transition-all shadow-lg hover:shadow-purple-500/25"
+                                >
+                                    <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-pink-400 blur opacity-0 group-hover:opacity-30 transition-opacity" />
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="relative">Contact Us</span>
+                                </a>
+
+                                {/* No Thanks Button */}
+                                <button
+                                    onClick={() => router.push("/complete")}
+                                    className="w-full px-6 py-2.5 rounded-lg text-white/50 hover:text-white/80 font-mono text-sm transition-colors hover:bg-white/5"
+                                >
+                                    No thanks, continue →
+                                </button>
+                            </motion.div>
                         </div>
-                    </motion.div>
 
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="font-orbitron text-3xl font-bold text-white tracking-wide mb-4"
-                    >
-                        TRANSMISSION COMPLETE
-                    </motion.h1>
+                        {/* Footer with countdown */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.7 }}
+                            className="px-6 py-4 border-t border-white/5 bg-white/[0.02]"
+                        >
+                            <div className="flex items-center justify-center gap-2 text-white/30">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <span className="font-mono text-xs">
+                                    Auto-redirecting in {countdown}s...
+                                </span>
+                            </div>
+                        </motion.div>
+                    </div>
 
+                    {/* Team Credit */}
                     <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="font-mono text-white/50 mb-8"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="text-center mt-4 font-mono text-xs text-white/20"
                     >
-                        Your feedback has been securely logged in our database.
+                        teamhackminors@gmail.com
                     </motion.p>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="inline-block p-6 rounded-xl bg-white/5 border border-cyan-500/20"
-                    >
-                        <p className="font-mono text-xs text-white/40 uppercase tracking-widest mb-2">Redirecting in</p>
-                        <p className="font-orbitron text-4xl font-bold text-cyan-400">{countdown}</p>
-                    </motion.div>
                 </motion.div>
-
-                <SuccessAnimation show={true} onComplete={() => { }} />
             </div>
         )
     }

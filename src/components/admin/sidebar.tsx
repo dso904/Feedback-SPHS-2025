@@ -14,6 +14,7 @@ import {
     Menu,
     X,
     Zap,
+    Shield,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
     { icon: LayoutDashboard, label: "Command Center", href: "/admin" },
     { icon: MessageSquare, label: "Data Stream", href: "/admin/feedback" },
     { icon: BookOpen, label: "Subjects", href: "/admin/subjects" },
+    { icon: Shield, label: "Submission Logs", href: "/admin/logs" },
     { icon: Settings, label: "System Config", href: "/admin/settings" },
 ]
 
