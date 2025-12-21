@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-admin"
-import { getClientIP, maskIP } from "@/lib/get-client-ip"
 
 /**
  * GET /api/protection/logs
@@ -35,15 +34,14 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        // Mask IPs for privacy
-        const maskedLogs = logs?.map(log => ({
+        // Format logs for display (no IP masking - show full IP)
+        const formattedLogs = logs?.map(log => ({
             ...log,
-            ip_address: maskIP(log.ip_address),
-            fingerprint_display: log.fingerprint_hash?.slice(0, 8) + "..."
+            fingerprint_display: log.fingerprint_hash?.slice(0, 12) + "..."
         }))
 
         return NextResponse.json({
-            logs: maskedLogs,
+            logs: formattedLogs,
             total: count,
             limit,
             offset

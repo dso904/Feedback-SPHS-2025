@@ -14,10 +14,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
+// Helper to ensure URL has protocol
+const getSiteUrl = () => {
+  const url = process.env.NEXT_PUBLIC_SITE_URL || "feedback-sphs-2025.vercel.app"
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url
+  }
+  return `https://${url}`
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://feedback-sphs.vercel.app"
-  ),
+  metadataBase: new URL(getSiteUrl()),
   title: "Feedback - Biennial Exhibition of South Point School 2025",
   description: "Share your valuable feedback for the Biennial Exhibition projects at South Point School. Your voice matters!",
   keywords: ["feedback", "exhibition", "school", "south point", "biennial exhibition", "SPHS 2025"],
