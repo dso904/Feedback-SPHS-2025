@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -53,6 +52,9 @@ import {
     ChevronRight,
     Trash2,
     Loader2,
+    Database,
+    Activity,
+    Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { AdminSidebar } from "@/components/admin/sidebar"
@@ -131,11 +133,11 @@ export default function FeedbackPage() {
         setSelectedIds(new Set())
     }, [search, roleFilter, currentPage])
 
-    const getRatingColor = (percent: number) => {
-        if (percent >= 80) return "bg-green-500/20 text-green-400 border-green-500/30"
-        if (percent >= 60) return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-        if (percent >= 40) return "bg-orange-500/20 text-orange-400 border-orange-500/30"
-        return "bg-red-500/20 text-red-400 border-red-500/30"
+    const getRatingBadge = (percent: number) => {
+        if (percent >= 80) return { class: "badge-futuristic-green", label: "EXCELLENT" }
+        if (percent >= 60) return { class: "badge-futuristic", label: "GOOD" }
+        if (percent >= 40) return { class: "badge-futuristic-purple", label: "FAIR" }
+        return { class: "badge-futuristic-pink", label: "LOW" }
     }
 
     // Multi-select handlers
@@ -148,7 +150,7 @@ export default function FeedbackPage() {
     }
 
     const toggleSelect = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation() // Prevent row click from opening modal
+        e.stopPropagation()
         const newSelected = new Set(selectedIds)
         if (newSelected.has(id)) {
             newSelected.delete(id)
@@ -174,13 +176,13 @@ export default function FeedbackPage() {
                 throw new Error(data.error || "Failed to delete")
             }
 
-            toast.success(`${selectedIds.size} feedback entries deleted`)
+            toast.success(`${selectedIds.size} entries purged from database`)
             setSelectedIds(new Set())
             setShowDeleteDialog(false)
-            fetchFeedback() // Refresh the list
+            fetchFeedback()
         } catch (error) {
             console.error("Delete error:", error)
-            toast.error("Failed to delete feedback entries")
+            toast.error("Failed to delete entries")
         } finally {
             setDeleting(false)
         }
@@ -192,45 +194,85 @@ export default function FeedbackPage() {
         if (!printWindow) return
 
         printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Feedback Report - ${selectedFeedback.subject || selectedFeedback.project?.name}</title>
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
-          h1 { color: #333; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px; }
-          .info { display: flex; justify-content: space-between; margin: 20px 0; }
-          .info-item { text-align: center; padding: 15px; background: #f5f5f5; border-radius: 8px; }
-          .info-item label { font-size: 12px; color: #666; display: block; }
-          .info-item span { font-size: 20px; font-weight: bold; }
-          .ratings { margin: 20px 0; }
-          .rating-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-          .comment { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 20px; }
-          .footer { text-align: center; color: #999; margin-top: 30px; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <h1>Feedback Report</h1>
-        <div class="info">
-          <div class="info-item"><label>Subject</label><span>${selectedFeedback.subject || selectedFeedback.project?.name}</span></div>
-          <div class="info-item"><label>Score</label><span>${selectedFeedback.percent}%</span></div>
-          <div class="info-item"><label>Role</label><span>${selectedFeedback.user_role}</span></div>
-        </div>
-        <div class="ratings">
-          <h3>Ratings</h3>
-          <div class="rating-row"><span>Topic Selection</span><span>${selectedFeedback.q1}/5</span></div>
-          <div class="rating-row"><span>Communication</span><span>${selectedFeedback.q2}/5</span></div>
-          <div class="rating-row"><span>Creativity</span><span>${selectedFeedback.q3}/5</span></div>
-          <div class="rating-row"><span>Clarity</span><span>${selectedFeedback.q4}/5</span></div>
-          <div class="rating-row"><span>Enthusiasm</span><span>${selectedFeedback.q5}/5</span></div>
-          <div class="rating-row"><span>Overall</span><span>${selectedFeedback.q6}/5</span></div>
-        </div>
-        ${selectedFeedback.comment ? `<div class="comment"><strong>Comment:</strong><p>${selectedFeedback.comment}</p></div>` : ""}
-        <div class="footer">Submitted on ${formatDate(selectedFeedback.created_at)} • South Point High School Feedback System</div>
-        <script>window.print(); window.close();</script>
-      </body>
-      </html>
-    `)
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Data Report - ${selectedFeedback.subject || selectedFeedback.project?.name}</title>
+                <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+                <style>
+                    body { 
+                        font-family: 'JetBrains Mono', monospace; 
+                        max-width: 600px; 
+                        margin: 40px auto; 
+                        padding: 20px;
+                        background: #0a0a12;
+                        color: #fff;
+                    }
+                    h1 { 
+                        font-family: 'Orbitron', sans-serif;
+                        color: #00f0ff; 
+                        border-bottom: 2px solid #00f0ff; 
+                        padding-bottom: 10px; 
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                    }
+                    .info { display: flex; justify-content: space-between; margin: 20px 0; gap: 10px; }
+                    .info-item { 
+                        text-align: center; 
+                        padding: 15px; 
+                        background: rgba(0,240,255,0.1); 
+                        border: 1px solid rgba(0,240,255,0.3);
+                        border-radius: 8px;
+                        flex: 1;
+                    }
+                    .info-item label { font-size: 10px; color: rgba(255,255,255,0.5); display: block; text-transform: uppercase; }
+                    .info-item span { font-size: 18px; font-weight: bold; color: #00f0ff; }
+                    .ratings { margin: 20px 0; }
+                    .rating-row { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        padding: 10px; 
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                    }
+                    .rating-row span:last-child { color: #a855f7; }
+                    .comment { 
+                        background: rgba(168,85,247,0.1); 
+                        border: 1px solid rgba(168,85,247,0.3);
+                        padding: 15px; 
+                        border-radius: 8px; 
+                        margin-top: 20px; 
+                    }
+                    .footer { text-align: center; color: rgba(255,255,255,0.4); margin-top: 30px; font-size: 10px; }
+                    @media print {
+                        body { background: #fff; color: #000; }
+                        h1 { color: #8b5cf6; border-color: #8b5cf6; }
+                        .info-item { background: #f5f5f5; border-color: #ddd; }
+                        .info-item span { color: #8b5cf6; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>// DATA REPORT</h1>
+                <div class="info">
+                    <div class="info-item"><label>Subject</label><span>${selectedFeedback.subject || selectedFeedback.project?.name}</span></div>
+                    <div class="info-item"><label>Score</label><span>${selectedFeedback.percent}%</span></div>
+                    <div class="info-item"><label>Role</label><span>${selectedFeedback.user_role}</span></div>
+                </div>
+                <div class="ratings">
+                    <h3 style="color: #a855f7; font-family: Orbitron;">RATINGS</h3>
+                    <div class="rating-row"><span>Topic Selection</span><span>${selectedFeedback.q1}/5</span></div>
+                    <div class="rating-row"><span>Communication</span><span>${selectedFeedback.q2}/5</span></div>
+                    <div class="rating-row"><span>Creativity</span><span>${selectedFeedback.q3}/5</span></div>
+                    <div class="rating-row"><span>Clarity</span><span>${selectedFeedback.q4}/5</span></div>
+                    <div class="rating-row"><span>Enthusiasm</span><span>${selectedFeedback.q5}/5</span></div>
+                    <div class="rating-row"><span>Overall</span><span>${selectedFeedback.q6}/5</span></div>
+                </div>
+                ${selectedFeedback.comment ? `<div class="comment"><strong style="color: #a855f7;">// COMMENT:</strong><p>${selectedFeedback.comment}</p></div>` : ""}
+                <div class="footer">Submitted: ${formatDate(selectedFeedback.created_at)} • South Point Mission Control</div>
+                <script>window.print(); window.close();</script>
+            </body>
+            </html>
+        `)
         printWindow.document.close()
     }
 
@@ -238,22 +280,33 @@ export default function FeedbackPage() {
 
     return (
         <AdminSidebar>
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            {/* Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8"
+            >
                 <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-1">All Feedback</h1>
-                    <p className="text-slate-600 dark:text-white/60">{filteredFeedback.length} of {feedback.length} entries</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Database className="w-5 h-5 text-cyan-400" />
+                        <span className="font-mono text-xs text-cyan-400 uppercase tracking-widest">Data Stream</span>
+                    </div>
+                    <h1 className="font-orbitron text-2xl lg:text-3xl font-bold text-white tracking-wide">
+                        FEEDBACK DATABASE
+                    </h1>
+                    <p className="font-mono text-white/50 text-sm mt-1">
+                        {filteredFeedback.length} of {feedback.length} entries • Real-time sync active
+                    </p>
                 </div>
-                <div className="flex gap-2">
-                    <Link href="/api/export" target="_blank">
-                        <Button className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500">
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                        </Button>
-                    </Link>
-                </div>
+                <Link href="/api/export" target="_blank">
+                    <Button className="futuristic-btn px-6 py-2">
+                        <Download className="w-4 h-4 mr-2" />
+                        EXPORT CSV
+                    </Button>
+                </Link>
             </motion.div>
 
-            {/* Bulk Action Bar - appears when items are selected */}
+            {/* Bulk Action Bar */}
             <AnimatePresence>
                 {selectedIds.size > 0 && (
                     <motion.div
@@ -262,27 +315,29 @@ export default function FeedbackPage() {
                         exit={{ opacity: 0, y: -10, height: 0 }}
                         className="mb-4"
                     >
-                        <div className="flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                            <p className="text-red-400 font-medium">
-                                {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
-                            </p>
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-pink-500/10 border border-pink-500/30">
+                            <div className="flex items-center gap-3">
+                                <Zap className="w-5 h-5 text-pink-400 animate-pulse" />
+                                <p className="font-mono text-sm text-pink-400">
+                                    {selectedIds.size} ITEM{selectedIds.size > 1 ? "S" : ""} SELECTED
+                                </p>
+                            </div>
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setSelectedIds(new Set())}
-                                    className="bg-white/5 border-white/10 hover:bg-white/10"
+                                    className="font-mono text-xs bg-transparent border-white/20 text-white hover:bg-white/10"
                                 >
-                                    Cancel
+                                    CANCEL
                                 </Button>
                                 <Button
-                                    variant="destructive"
                                     size="sm"
                                     onClick={() => setShowDeleteDialog(true)}
-                                    className="bg-red-600 hover:bg-red-700"
+                                    className="font-mono text-xs bg-pink-600 hover:bg-pink-700 text-white border-0"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete Selected
+                                    PURGE DATA
                                 </Button>
                             </div>
                         </div>
@@ -291,78 +346,100 @@ export default function FeedbackPage() {
             </AnimatePresence>
 
             {/* Search & Filter */}
-            <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5 mb-6">
-                <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/40" />
-                            <Input
-                                placeholder="Search by project or comment..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-10 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
-                            />
-                            {search && (
-                                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-slate-400 dark:text-white/40" />
-                            <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                <SelectTrigger className="w-40 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white">
-                                    <SelectValue placeholder="All Roles" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-900 border-white/10">
-                                    <SelectItem value="all">All Roles</SelectItem>
-                                    {uniqueRoles.map((role) => (
-                                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="data-module p-4 mb-6"
+            >
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/50" />
+                        <Input
+                            placeholder="Search database..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-10 input-futuristic"
+                        />
+                        {search && (
+                            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-purple-400/50" />
+                        <Select value={roleFilter} onValueChange={setRoleFilter}>
+                            <SelectTrigger className="w-40 input-futuristic">
+                                <SelectValue placeholder="All Roles" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#12121f] border-cyan-500/30">
+                                <SelectItem value="all" className="font-mono text-white">All Roles</SelectItem>
+                                {uniqueRoles.map((role) => (
+                                    <SelectItem key={role} value={role} className="font-mono text-white">{role}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </motion.div>
 
-            <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
-                <CardHeader>
-                    <CardTitle className="text-slate-900 dark:text-white">Feedback Entries</CardTitle>
-                    <CardDescription className="text-slate-500 dark:text-white/40">Click any row to view details, or use checkboxes to select multiple</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
+            {/* Data Table */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="data-module overflow-hidden"
+            >
+                {/* Table Header */}
+                <div className="p-4 border-b border-cyan-500/10">
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-cyan-400" />
+                        <h3 className="font-orbitron text-sm text-white tracking-wide">DATA ENTRIES</h3>
+                        <span className="font-mono text-xs text-white/40">// click row to inspect</span>
+                    </div>
+                </div>
+
+                {loading ? (
+                    <div className="p-6">
                         <TableSkeleton rows={5} />
-                    ) : filteredFeedback.length === 0 ? (
+                    </div>
+                ) : filteredFeedback.length === 0 ? (
+                    <div className="p-6">
                         <EmptyState
                             type={search || roleFilter !== "all" ? "search" : "feedback"}
                             action={search || roleFilter !== "all" ? { label: "Clear Filters", onClick: () => { setSearch(""); setRoleFilter("all") } } : undefined}
                         />
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-slate-200 dark:border-white/10 hover:bg-transparent">
-                                        <TableHead className="w-12">
-                                            <Checkbox
-                                                checked={paginatedFeedback.length > 0 && selectedIds.size === paginatedFeedback.length}
-                                                onCheckedChange={toggleSelectAll}
-                                                className="border-slate-300 dark:border-white/30"
-                                            />
-                                        </TableHead>
-                                        <TableHead className="text-slate-600 dark:text-white/60">Subject</TableHead>
-                                        <TableHead className="text-slate-600 dark:text-white/60 hidden sm:table-cell">Role</TableHead>
-                                        <TableHead className="text-slate-600 dark:text-white/60">Rating</TableHead>
-                                        <TableHead className="text-slate-600 dark:text-white/60 hidden md:table-cell">Date</TableHead>
-                                        <TableHead className="text-slate-600 dark:text-white/60 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {paginatedFeedback.map((f) => (
-                                        <TableRow
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-cyan-500/10 hover:bg-transparent">
+                                    <TableHead className="w-12">
+                                        <Checkbox
+                                            checked={paginatedFeedback.length > 0 && selectedIds.size === paginatedFeedback.length}
+                                            onCheckedChange={toggleSelectAll}
+                                            className="border-cyan-500/50 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                                        />
+                                    </TableHead>
+                                    <TableHead className="font-mono text-xs text-cyan-400/60 uppercase tracking-wider">Subject</TableHead>
+                                    <TableHead className="font-mono text-xs text-cyan-400/60 uppercase tracking-wider hidden sm:table-cell">Role</TableHead>
+                                    <TableHead className="font-mono text-xs text-cyan-400/60 uppercase tracking-wider">Score</TableHead>
+                                    <TableHead className="font-mono text-xs text-cyan-400/60 uppercase tracking-wider hidden md:table-cell">Timestamp</TableHead>
+                                    <TableHead className="font-mono text-xs text-cyan-400/60 uppercase tracking-wider text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedFeedback.map((f, index) => {
+                                    const ratingBadge = getRatingBadge(f.percent)
+                                    return (
+                                        <motion.tr
                                             key={f.id}
-                                            className={`border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer ${selectedIds.has(f.id) ? "bg-purple-500/10 hover:bg-purple-500/15" : ""}`}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className={`border-cyan-500/5 hover:bg-cyan-500/5 cursor-pointer transition-colors ${selectedIds.has(f.id) ? "bg-cyan-500/10" : ""}`}
                                             onClick={() => setSelectedFeedback(f)}
                                         >
                                             <TableCell onClick={(e) => e.stopPropagation()}>
@@ -377,86 +454,99 @@ export default function FeedbackPage() {
                                                         }
                                                         setSelectedIds(newSelected)
                                                     }}
-                                                    className="border-slate-300 dark:border-white/30"
+                                                    className="border-cyan-500/50 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
                                                 />
                                             </TableCell>
-                                            <TableCell className="text-slate-900 dark:text-white font-medium">{f.subject || f.project?.name || "Unknown"}</TableCell>
+                                            <TableCell className="font-mono text-sm text-white">
+                                                {f.subject || f.project?.name || "Unknown"}
+                                            </TableCell>
                                             <TableCell className="hidden sm:table-cell">
-                                                <Badge variant="outline" className="bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/80 border-slate-200 dark:border-white/20">{f.user_role}</Badge>
+                                                <span className="badge-futuristic-purple">{f.user_role}</span>
                                             </TableCell>
-                                            <TableCell><Badge className={getRatingColor(f.percent)}>{f.percent}%</Badge></TableCell>
-                                            <TableCell className="text-slate-500 dark:text-white/60 hidden md:table-cell">{formatDate(f.created_at, { dateStyle: "medium" })}</TableCell>
+                                            <TableCell>
+                                                <span className={ratingBadge.class}>
+                                                    {f.percent}%
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs text-white/40 hidden md:table-cell">
+                                                {formatDate(f.created_at, { dateStyle: "medium" })}
+                                            </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" className="text-slate-600 dark:text-white/60 hover:text-purple-500"><Eye className="w-4 h-4" /></Button>
+                                                <Button variant="ghost" size="sm" className="text-cyan-400/60 hover:text-cyan-400 hover:bg-cyan-500/10">
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
                                             </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                        </motion.tr>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
 
-                            {/* Pagination Controls */}
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-white/10 mt-4">
-                                    <p className="text-sm text-slate-500 dark:text-white/40">
-                                        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredFeedback.length)} of {filteredFeedback.length}
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                            disabled={currentPage === 1}
-                                            className="bg-white/5 border-slate-200 dark:border-white/10"
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </Button>
-                                        <span className="text-sm text-slate-600 dark:text-white/60 px-2">
-                                            Page {currentPage} of {totalPages}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                            disabled={currentPage === totalPages}
-                                            className="bg-white/5 border-slate-200 dark:border-white/10"
-                                        >
-                                            <ChevronRight className="w-4 h-4" />
-                                        </Button>
-                                    </div>
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between p-4 border-t border-cyan-500/10">
+                                <p className="font-mono text-xs text-white/40">
+                                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredFeedback.length)} of {filteredFeedback.length}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="font-mono text-xs bg-transparent border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-30"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <span className="font-mono text-xs text-white/60 px-3">
+                                        {currentPage} / {totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="font-mono text-xs bg-transparent border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-30"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </motion.div>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <AlertDialogContent className="bg-slate-900 border-white/10">
+                <AlertDialogContent className="bg-[#12121f] border-pink-500/30">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white">Delete {selectedIds.size} feedback entries?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-white/60">
-                            This action cannot be undone. This will permanently delete the selected feedback entries from the database.
+                        <AlertDialogTitle className="font-orbitron text-white flex items-center gap-2">
+                            <Trash2 className="w-5 h-5 text-pink-400" />
+                            CONFIRM DATA PURGE
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="font-mono text-white/60">
+                            You are about to permanently delete {selectedIds.size} data entries. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                            Cancel
+                        <AlertDialogCancel className="font-mono text-xs bg-transparent border-white/20 text-white hover:bg-white/10">
+                            ABORT
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             disabled={deleting}
-                            className="bg-red-600 hover:bg-red-700 text-white"
+                            className="font-mono text-xs bg-pink-600 hover:bg-pink-700 text-white"
                         >
                             {deleting ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Deleting...
+                                    PURGING...
                                 </>
                             ) : (
                                 <>
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
+                                    <Zap className="w-4 h-4 mr-2" />
+                                    EXECUTE
                                 </>
                             )}
                         </AlertDialogAction>
@@ -466,54 +556,68 @@ export default function FeedbackPage() {
 
             {/* Detail Dialog */}
             <Dialog open={!!selectedFeedback} onOpenChange={() => setSelectedFeedback(null)}>
-                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white max-w-lg">
+                <DialogContent className="bg-[#0c0c16] border-cyan-500/30 text-white max-w-lg">
                     <DialogHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <DialogTitle className="text-xl">Feedback Details</DialogTitle>
-                                <DialogDescription className="text-slate-500 dark:text-white/60">{selectedFeedback?.subject || selectedFeedback?.project?.name} • {selectedFeedback?.user_role}</DialogDescription>
+                                <DialogTitle className="font-orbitron text-lg tracking-wide flex items-center gap-2">
+                                    <Database className="w-5 h-5 text-cyan-400" />
+                                    DATA INSPECTION
+                                </DialogTitle>
+                                <DialogDescription className="font-mono text-white/50 text-xs mt-1">
+                                    {selectedFeedback?.subject || selectedFeedback?.project?.name} • {selectedFeedback?.user_role}
+                                </DialogDescription>
                             </div>
-                            <Button variant="outline" size="sm" onClick={handlePrint} className="bg-white/5 border-slate-200 dark:border-white/10">
+                            <Button variant="outline" size="sm" onClick={handlePrint} className="font-mono text-xs bg-transparent border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10">
                                 <Printer className="w-4 h-4 mr-2" />
-                                Print
+                                PRINT
                             </Button>
                         </div>
                     </DialogHeader>
                     {selectedFeedback && (
-                        <div ref={printRef} className="space-y-6 pt-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-white/5 rounded-xl">
+                        <div ref={printRef} className="space-y-4 pt-4">
+                            {/* Score Display */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
                                 <div>
-                                    <p className="text-slate-500 dark:text-white/60 text-sm">Overall Score</p>
-                                    <p className="text-3xl font-bold">{selectedFeedback.percent}%</p>
+                                    <p className="font-mono text-xs text-white/50 uppercase">Overall Score</p>
+                                    <p className="font-orbitron text-3xl font-bold text-cyan-400">{selectedFeedback.percent}%</p>
                                 </div>
                                 <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
-                                        <Star key={star} className={`w-6 h-6 ${star <= Math.round(selectedFeedback.percent / 20) ? "text-yellow-400 fill-yellow-400" : "text-slate-300 dark:text-white/20"}`} />
+                                        <Star key={star} className={`w-5 h-5 ${star <= Math.round(selectedFeedback.percent / 20) ? "text-yellow-400 fill-yellow-400" : "text-white/20"}`} />
                                     ))}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+
+                            {/* Ratings Grid */}
+                            <div className="grid grid-cols-2 gap-2">
                                 {[
-                                    { label: "Topic Selection", value: selectedFeedback.q1 },
-                                    { label: "Communication", value: selectedFeedback.q2 },
-                                    { label: "Creativity", value: selectedFeedback.q3 },
+                                    { label: "Topic", value: selectedFeedback.q1 },
+                                    { label: "Comm", value: selectedFeedback.q2 },
+                                    { label: "Creative", value: selectedFeedback.q3 },
                                     { label: "Clarity", value: selectedFeedback.q4 },
-                                    { label: "Enthusiasm", value: selectedFeedback.q5 },
+                                    { label: "Enthus", value: selectedFeedback.q5 },
                                     { label: "Overall", value: selectedFeedback.q6 },
                                 ].map((q) => (
-                                    <div key={q.label} className="p-3 bg-slate-100 dark:bg-white/5 rounded-lg">
-                                        <p className="text-slate-500 dark:text-white/60 text-xs mb-1">{q.label}</p>
-                                        <p className="font-semibold">{q.value}/5</p>
+                                    <div key={q.label} className="p-3 rounded-lg bg-white/5 border border-white/5">
+                                        <p className="font-mono text-[10px] text-white/40 uppercase mb-1">{q.label}</p>
+                                        <p className="font-orbitron text-lg text-purple-400">{q.value}<span className="text-white/30">/5</span></p>
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Comment */}
                             {selectedFeedback.comment && (
-                                <div className="p-4 bg-slate-100 dark:bg-white/5 rounded-xl">
-                                    <p className="text-slate-500 dark:text-white/60 text-sm mb-2">Comment</p>
-                                    <p>{selectedFeedback.comment}</p>
+                                <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                    <p className="font-mono text-xs text-purple-400 uppercase mb-2">// Comment</p>
+                                    <p className="font-mono text-sm text-white/80">{selectedFeedback.comment}</p>
                                 </div>
                             )}
-                            <p className="text-slate-400 dark:text-white/40 text-sm text-center">Submitted on {formatDate(selectedFeedback.created_at)}</p>
+
+                            {/* Timestamp */}
+                            <p className="font-mono text-xs text-white/30 text-center">
+                                Recorded: {formatDate(selectedFeedback.created_at)}
+                            </p>
                         </div>
                     )}
                 </DialogContent>

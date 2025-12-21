@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +15,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Trash2, BookOpen, Loader2 } from "lucide-react"
+import { Plus, Trash2, BookOpen, Loader2, Database, Cpu, Zap } from "lucide-react"
 import { toast } from "sonner"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { CardsSkeleton } from "@/components/admin/skeletons"
@@ -91,7 +90,7 @@ export default function SubjectsPage() {
 
             if (!res.ok) throw new Error("Failed to add")
 
-            toast.success("Subject added successfully!")
+            toast.success("Subject module added to database!")
             setNewSubject({ name: "", icon: "📚" })
             setDialogOpen(false)
             setErrors({ name: "" })
@@ -114,7 +113,7 @@ export default function SubjectsPage() {
 
             if (!res.ok) throw new Error("Failed to delete")
 
-            toast.success("Subject deleted successfully!")
+            toast.success("Subject module purged from database!")
             setDeleteId(null)
             fetchSubjects()
         } catch {
@@ -126,28 +125,38 @@ export default function SubjectsPage() {
 
     return (
         <AdminSidebar>
+            {/* Header */}
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-1">Manage Subjects</h1>
-                    <p className="text-slate-600 dark:text-white/60">{subjects.length} subjects available for feedback</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Database className="w-5 h-5 text-purple-400" />
+                        <span className="font-mono text-xs text-purple-400 uppercase tracking-widest">Subject Registry</span>
+                    </div>
+                    <h1 className="font-orbitron text-2xl lg:text-3xl font-bold text-white tracking-wide">
+                        SUBJECT MODULES
+                    </h1>
+                    <p className="font-mono text-white/50 text-sm mt-1">{subjects.length} modules registered • Feedback collection points</p>
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500">
+                        <Button className="futuristic-btn px-6 py-2">
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Subject
+                            ADD MODULE
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white">
+                    <DialogContent className="bg-[#0c0c16] border-cyan-500/30 text-white">
                         <DialogHeader>
-                            <DialogTitle>Add New Subject</DialogTitle>
-                            <DialogDescription className="text-slate-500 dark:text-white/60">
-                                Create a new subject for feedback collection
+                            <DialogTitle className="font-orbitron text-lg tracking-wide flex items-center gap-2">
+                                <Cpu className="w-5 h-5 text-cyan-400" />
+                                NEW MODULE
+                            </DialogTitle>
+                            <DialogDescription className="font-mono text-white/50 text-xs">
+                                Register a new subject for feedback collection
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                             <div>
-                                <Label htmlFor="name" className="text-slate-700 dark:text-white">Subject Name</Label>
+                                <Label htmlFor="name" className="font-mono text-xs text-white/60 uppercase tracking-wider">Module Name</Label>
                                 <Input
                                     id="name"
                                     value={newSubject.name}
@@ -156,20 +165,20 @@ export default function SubjectsPage() {
                                         if (errors.name) setErrors({ name: "" })
                                     }}
                                     placeholder="e.g., Physics, Chemistry, History"
-                                    className={`mt-1 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white ${errors.name ? "border-red-500" : ""}`}
+                                    className={`mt-1 input-futuristic ${errors.name ? "border-red-500" : ""}`}
                                 />
-                                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                                {errors.name && <p className="font-mono text-xs text-red-400 mt-1">{errors.name}</p>}
                             </div>
                             <div>
-                                <Label className="text-slate-700 dark:text-white">Icon</Label>
+                                <Label className="font-mono text-xs text-white/60 uppercase tracking-wider">Module Icon</Label>
                                 <div className="grid grid-cols-9 gap-2 mt-2">
                                     {ICONS.map((icon) => (
                                         <button
                                             key={icon}
                                             onClick={() => setNewSubject({ ...newSubject, icon })}
                                             className={`p-2 rounded-lg text-xl transition-all ${newSubject.icon === icon
-                                                ? "bg-purple-500/20 border-2 border-purple-500"
-                                                : "bg-slate-100 dark:bg-white/5 border-2 border-transparent hover:border-white/20"
+                                                ? "bg-cyan-500/20 border-2 border-cyan-500 shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+                                                : "bg-white/5 border-2 border-transparent hover:border-white/20"
                                                 }`}
                                         >
                                             {icon}
@@ -180,17 +189,17 @@ export default function SubjectsPage() {
                             <Button
                                 onClick={handleAddSubject}
                                 disabled={adding}
-                                className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500"
+                                className="w-full futuristic-btn py-3"
                             >
                                 {adding ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Adding...
+                                        PROCESSING...
                                     </>
                                 ) : (
                                     <>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Add Subject
+                                        <Zap className="w-4 h-4 mr-2" />
+                                        REGISTER MODULE
                                     </>
                                 )}
                             </Button>
@@ -204,9 +213,9 @@ export default function SubjectsPage() {
             ) : subjects.length === 0 ? (
                 <EmptyState
                     type="projects"
-                    title="No Subjects Yet"
-                    description="Add subjects for users to give feedback on"
-                    action={{ label: "Add Subject", onClick: () => setDialogOpen(true) }}
+                    title="No Modules Registered"
+                    description="Add subject modules for users to give feedback on"
+                    action={{ label: "Add Module", onClick: () => setDialogOpen(true) }}
                 />
             ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -215,32 +224,48 @@ export default function SubjectsPage() {
                             key={subject.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
+                            transition={{ delay: index * 0.05 }}
+                            whileHover={{ y: -4 }}
                         >
-                            <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5 hover:border-purple-500/50 transition-all group">
-                                <CardHeader className="flex flex-row items-start justify-between pb-2">
+                            <div className="data-module p-5 group relative overflow-hidden">
+                                {/* Corner accents */}
+                                <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-purple-500/40 rounded-tl-xl" />
+                                <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-purple-500/40 rounded-br-xl" />
+
+                                {/* Content */}
+                                <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-2xl">
-                                            {subject.icon}
+                                        {/* Icon with glow */}
+                                        <div className="relative">
+                                            <div className="absolute -inset-1 bg-purple-500/30 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-2xl border border-white/10">
+                                                {subject.icon}
+                                            </div>
                                         </div>
                                         <div>
-                                            <CardTitle className="text-lg text-slate-900 dark:text-white">{subject.name}</CardTitle>
-                                            <CardDescription className="text-slate-500 dark:text-white/40">
-                                                <BookOpen className="w-3 h-3 inline mr-1" />
-                                                Subject
-                                            </CardDescription>
+                                            <h3 className="font-mono text-lg text-white">{subject.name}</h3>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <BookOpen className="w-3 h-3 text-purple-400" />
+                                                <span className="font-mono text-[10px] text-white/40 uppercase tracking-wider">Subject Module</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setDeleteId(subject.id)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-pink-400 hover:text-pink-300 hover:bg-pink-500/10"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
-                                </CardHeader>
-                            </Card>
+                                </div>
+
+                                {/* Status indicator */}
+                                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
+                                    <div className="pulse-dot-green" style={{ width: '6px', height: '6px' }} />
+                                    <span className="font-mono text-[10px] text-green-400/80 uppercase">Active</span>
+                                </div>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
@@ -250,8 +275,8 @@ export default function SubjectsPage() {
                 open={!!deleteId}
                 onOpenChange={() => setDeleteId(null)}
                 onConfirm={handleDeleteSubject}
-                title="Delete Subject"
-                description="Are you sure you want to delete this subject? This action cannot be undone."
+                title="Purge Module"
+                description="Are you sure you want to remove this subject module? This action cannot be undone."
                 variant="danger"
             />
         </AdminSidebar>

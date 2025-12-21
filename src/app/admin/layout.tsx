@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react"
 import { usePathname } from "next/navigation"
 import { AuthGuard } from "@/components/admin/auth-guard"
+import "./futuristic.css"
 
 export default function AdminLayout({
     children,

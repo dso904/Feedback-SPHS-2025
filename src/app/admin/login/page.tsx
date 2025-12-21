@@ -6,8 +6,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, Mail, Loader2, Shield, ArrowLeft } from "lucide-react"
+import { Lock, Mail, Loader2, Shield, ArrowLeft, Cpu, Zap } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -31,29 +30,32 @@ export default function AdminLoginPage() {
             })
 
             if (result?.error) {
-                toast.error("Invalid credentials")
+                toast.error("Access denied: Invalid credentials")
             } else {
-                toast.success("Welcome back!")
+                toast.success("Access granted!")
                 router.push("/admin")
             }
         } catch {
-            toast.error("Something went wrong")
+            toast.error("System error: Connection failed")
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Animated background */}
+        <div className="min-h-screen bg-[#050508] flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Animated background orbs */}
             <div className="absolute inset-0">
-                <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-                <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-700" />
-                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-1000" />
+                <div className="absolute top-0 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute -top-20 right-0 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[150px] animate-pulse delay-700" />
+                <div className="absolute -bottom-40 left-1/3 w-80 h-80 bg-pink-600/15 rounded-full blur-[100px] animate-pulse delay-1000" />
             </div>
 
             {/* Grid pattern overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+
+            {/* Radial vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,5,8,0.5)_70%,rgba(5,5,8,0.95)_100%)]" />
 
             {/* Content */}
             <motion.div
@@ -65,39 +67,56 @@ export default function AdminLoginPage() {
                 {/* Back link */}
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-6 transition-colors"
+                    className="inline-flex items-center gap-2 font-mono text-sm text-cyan-400/60 hover:text-cyan-400 mb-6 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Home
+                    EXIT TO MAIN
                 </Link>
 
-                <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl">
-                    <CardHeader className="text-center pb-2">
-                        <motion.div
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="mx-auto mb-4 w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 p-[2px]"
-                        >
-                            <div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center">
-                                <Image src="/logo.png" alt="Logo" width={50} height={50} className="rounded-lg" />
-                            </div>
-                        </motion.div>
-                        <CardTitle className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                            <Shield className="w-5 h-5 text-purple-400" />
-                            Admin Portal
-                        </CardTitle>
-                        <CardDescription className="text-white/60">
-                            Sign in to access the dashboard
-                        </CardDescription>
-                    </CardHeader>
+                {/* Login Card */}
+                <div className="relative">
+                    {/* Card border glow */}
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-cyan-500/50 via-purple-500/50 to-cyan-500/50 rounded-2xl blur-sm opacity-50" />
 
-                    <CardContent className="pt-6">
+                    <div className="relative bg-[#0c0c16]/90 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-8">
+                        {/* Corner brackets */}
+                        <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-cyan-500/60 rounded-tl-2xl" />
+                        <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-cyan-500/60 rounded-tr-2xl" />
+                        <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-cyan-500/60 rounded-bl-2xl" />
+                        <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-cyan-500/60 rounded-br-2xl" />
+
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            {/* Logo with holographic effect */}
+                            <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="mx-auto mb-6 relative"
+                            >
+                                <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-cyan-500 rounded-2xl blur opacity-40 animate-pulse" />
+                                <div className="relative w-20 h-20 rounded-2xl bg-[#0a0a12] border border-cyan-500/30 flex items-center justify-center">
+                                    <Image src="/logo.png" alt="Logo" width={50} height={50} className="rounded-lg" />
+                                    {/* Scan line */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/20 via-transparent to-transparent rounded-2xl animate-pulse" />
+                                </div>
+                            </motion.div>
+
+                            <h1 className="font-orbitron text-2xl font-bold text-white tracking-wider flex items-center justify-center gap-2">
+                                <Shield className="w-6 h-6 text-cyan-400" />
+                                ACCESS PORTAL
+                            </h1>
+                            <p className="font-mono text-xs text-white/50 mt-2 uppercase tracking-widest">
+                                Authorization Required
+                            </p>
+                        </div>
+
+                        {/* Login Form */}
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-white/80 flex items-center gap-2">
-                                    <Mail className="w-4 h-4" />
-                                    Email Address
+                                <Label htmlFor="email" className="font-mono text-xs text-white/60 uppercase tracking-wider flex items-center gap-2">
+                                    <Mail className="w-3 h-3 text-cyan-400" />
+                                    Operator ID
                                 </Label>
                                 <Input
                                     id="email"
@@ -106,14 +125,14 @@ export default function AdminLoginPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:ring-purple-500/20 h-12"
+                                    className="input-futuristic h-12"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-white/80 flex items-center gap-2">
-                                    <Lock className="w-4 h-4" />
-                                    Password
+                                <Label htmlFor="password" className="font-mono text-xs text-white/60 uppercase tracking-wider flex items-center gap-2">
+                                    <Lock className="w-3 h-3 text-purple-400" />
+                                    Access Code
                                 </Label>
                                 <Input
                                     id="password"
@@ -122,27 +141,38 @@ export default function AdminLoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:ring-purple-500/20 h-12"
+                                    className="input-futuristic h-12"
                                 />
                             </div>
 
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-12 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-purple-500/25"
+                                className="w-full h-12 futuristic-btn text-sm"
                             >
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Signing in...
+                                        AUTHENTICATING...
                                     </>
                                 ) : (
-                                    "Sign In"
+                                    <>
+                                        <Zap className="w-4 h-4 mr-2" />
+                                        INITIATE ACCESS
+                                    </>
                                 )}
                             </Button>
                         </form>
-                    </CardContent>
-                </Card>
+
+                        {/* Status indicator */}
+                        <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-white/5">
+                            <div className="pulse-dot-green" style={{ width: '6px', height: '6px' }} />
+                            <span className="font-mono text-[10px] text-white/40 uppercase tracking-wider">
+                                Secure Connection Established
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Security badge */}
                 <motion.div
@@ -151,9 +181,9 @@ export default function AdminLoginPage() {
                     transition={{ delay: 0.5 }}
                     className="mt-6 text-center"
                 >
-                    <div className="inline-flex items-center gap-2 text-white/40 text-sm">
-                        <Lock className="w-3 h-3" />
-                        Secured with NextAuth.js
+                    <div className="inline-flex items-center gap-2 font-mono text-[10px] text-white/30 uppercase tracking-widest">
+                        <Cpu className="w-3 h-3" />
+                        Encrypted • South Point Mission Control
                     </div>
                 </motion.div>
             </motion.div>

@@ -326,8 +326,13 @@ export default function FeedbackPage() {
                         <div className="flex justify-between mt-8">
                             <Button
                                 variant="outline"
-                                onClick={() => setCurrentStep((s) => s - 1)}
-                                disabled={currentStep === 1}
+                                onClick={() => {
+                                    if (currentStep === 1) {
+                                        router.push('/')
+                                    } else {
+                                        setCurrentStep((s) => s - 1)
+                                    }
+                                }}
                                 className="bg-white/5 border-white/20 text-white hover:bg-white/10"
                             >
                                 <ArrowLeft className="w-4 h-4 mr-2" />

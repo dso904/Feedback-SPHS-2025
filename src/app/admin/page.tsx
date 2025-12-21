@@ -2,10 +2,8 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { DashboardSkeleton } from "@/components/admin/skeletons"
 import {
@@ -17,6 +15,9 @@ import {
     ChevronRight,
     MessageSquare,
     BookOpen,
+    Activity,
+    Zap,
+    Database,
     Clock,
 } from "lucide-react"
 import Link from "next/link"
@@ -33,11 +34,36 @@ import {
     Cell,
     BarChart,
     Bar,
+    RadarChart,
+    Radar,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
 } from "recharts"
 import type { Feedback } from "@/lib/types"
-import { formatDate } from "@/lib/utils"
 
-const COLORS = ["#8b5cf6", "#06b6d4", "#ec4899", "#f59e0b", "#10b981"]
+const NEON_COLORS = ["#00f0ff", "#a855f7", "#ff0080", "#00ff88", "#ff6b00"]
+
+// Animated counter hook
+function useAnimatedCounter(end: number, duration: number = 1500) {
+    const [count, setCount] = useState(0)
+    const countRef = useRef(0)
+
+    useEffect(() => {
+        const startTime = Date.now()
+        const animate = () => {
+            const elapsed = Date.now() - startTime
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3) // Ease out cubic
+            countRef.current = Math.floor(eased * end)
+            setCount(countRef.current)
+            if (progress < 1) requestAnimationFrame(animate)
+        }
+        animate()
+    }, [end, duration])
+
+    return count
+}
 
 export default function AdminDashboard() {
     const { status } = useSession()
@@ -75,8 +101,9 @@ export default function AdminDashboard() {
 
                 const projectCounts: Record<string, number> = {}
                 data.forEach((f: Feedback) => {
-                    if (f.project?.name) {
-                        projectCounts[f.project.name] = (projectCounts[f.project.name] || 0) + 1
+                    const name = f.subject || f.project?.name
+                    if (name) {
+                        projectCounts[name] = (projectCounts[name] || 0) + 1
                     }
                 })
                 const topProject = Object.entries(projectCounts).sort((a, b) => b[1] - a[1])[0]
@@ -95,7 +122,7 @@ export default function AdminDashboard() {
         }
     }
 
-    // Chart data
+    // Chart data processing
     const roleDistribution = feedback.reduce((acc: Record<string, number>, f) => {
         acc[f.user_role] = (acc[f.user_role] || 0) + 1
         return acc
@@ -110,13 +137,14 @@ export default function AdminDashboard() {
         q5: feedback.length ? feedback.reduce((a, f) => a + f.q5, 0) / feedback.length : 0,
         q6: feedback.length ? feedback.reduce((a, f) => a + f.q6, 0) / feedback.length : 0,
     }
-    const barData = [
-        { name: "Topic", rating: questionAvg.q1.toFixed(1) },
-        { name: "Comm.", rating: questionAvg.q2.toFixed(1) },
-        { name: "Creative", rating: questionAvg.q3.toFixed(1) },
-        { name: "Clarity", rating: questionAvg.q4.toFixed(1) },
-        { name: "Enthus.", rating: questionAvg.q5.toFixed(1) },
-        { name: "Overall", rating: questionAvg.q6.toFixed(1) },
+
+    const radarData = [
+        { subject: "Topic", value: questionAvg.q1, fullMark: 5 },
+        { subject: "Comm", value: questionAvg.q2, fullMark: 5 },
+        { subject: "Creative", value: questionAvg.q3, fullMark: 5 },
+        { subject: "Clarity", value: questionAvg.q4, fullMark: 5 },
+        { subject: "Enthus", value: questionAvg.q5, fullMark: 5 },
+        { subject: "Overall", value: questionAvg.q6, fullMark: 5 },
     ]
 
     const weeklyData = Array.from({ length: 7 }, (_, i) => {
@@ -129,7 +157,6 @@ export default function AdminDashboard() {
         return { day: date.toLocaleDateString("en-US", { weekday: "short" }), count: dayFeedback.length }
     })
 
-    // Recent activity
     const recentFeedback = feedback.slice(0, 5)
 
     if (status === "loading" || loading) {
@@ -142,253 +169,392 @@ export default function AdminDashboard() {
 
     return (
         <AdminSidebar>
-            {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2">Dashboard Overview</h1>
-                <p className="text-slate-600 dark:text-white/60">Welcome back! Here&apos;s what&apos;s happening.</p>
+            {/* Command Center Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+            >
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="pulse-dot" />
+                    <span className="font-mono text-xs text-cyan-400 uppercase tracking-widest">System Active</span>
+                </div>
+                <h1 className="font-orbitron text-2xl lg:text-3xl font-bold text-white tracking-wide">
+                    COMMAND CENTER
+                </h1>
+                <p className="font-mono text-white/50 text-sm mt-1">Real-time analytics dashboard • All systems nominal</p>
             </motion.div>
 
-            {/* Stats Cards - Clickable */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-                <StatCard
-                    icon={<MessageSquare className="w-5 h-5 lg:w-6 lg:h-6" />}
-                    title="Total Feedback"
-                    value={stats.totalFeedback.toString()}
-                    change="+12%"
-                    color="purple"
-                    href="/admin/feedback"
-                />
-                <StatCard
-                    icon={<Star className="w-5 h-5 lg:w-6 lg:h-6" />}
-                    title="Avg Rating"
-                    value={`${stats.avgRating}%`}
-                    change="+5%"
+            {/* Data Modules Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-8">
+                <DataModule
+                    icon={<Database className="w-5 h-5" />}
+                    label="TOTAL ENTRIES"
+                    value={stats.totalFeedback}
+                    suffix=""
                     color="cyan"
                     href="/admin/feedback"
+                    delay={0}
                 />
-                <StatCard
-                    icon={<TrendingUp className="w-5 h-5 lg:w-6 lg:h-6" />}
-                    title="This Week"
-                    value={stats.thisWeek.toString()}
-                    change="New"
-                    color="pink"
+                <DataModule
+                    icon={<Activity className="w-5 h-5" />}
+                    label="AVG RATING"
+                    value={stats.avgRating}
+                    suffix="%"
+                    color="purple"
                     href="/admin/feedback"
+                    delay={0.1}
                 />
-                <StatCard
-                    icon={<Users className="w-5 h-5 lg:w-6 lg:h-6" />}
-                    title="Top Subject"
-                    value={stats.topProject.length > 12 ? stats.topProject.slice(0, 12) + "..." : stats.topProject}
-                    change="Most rated"
-                    color="amber"
+                <DataModule
+                    icon={<Zap className="w-5 h-5" />}
+                    label="THIS WEEK"
+                    value={stats.thisWeek}
+                    suffix=""
+                    color="green"
+                    href="/admin/feedback"
+                    delay={0.2}
+                />
+                <DataModule
+                    icon={<Star className="w-5 h-5" />}
+                    label="TOP SUBJECT"
+                    value={0}
+                    suffix=""
+                    text={stats.topProject.length > 10 ? stats.topProject.slice(0, 10) + "..." : stats.topProject}
+                    color="pink"
                     href="/admin/subjects"
+                    delay={0.3}
                 />
             </div>
 
-            {/* Charts Row */}
+            {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
-                    <CardHeader>
-                        <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-purple-500" />
-                            Weekly Trend
-                        </CardTitle>
-                        <CardDescription className="text-slate-500 dark:text-white/40">Last 7 days</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-48 lg:h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={weeklyData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                                    <XAxis dataKey="day" stroke="#ffffff40" fontSize={12} />
-                                    <YAxis stroke="#ffffff40" fontSize={12} />
-                                    <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #ffffff10", borderRadius: "8px" }} />
-                                    <Line type="monotone" dataKey="count" stroke="url(#lineGradient)" strokeWidth={3} dot={{ fill: "#8b5cf6" }} />
-                                    <defs>
-                                        <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                                            <stop offset="0%" stopColor="#8b5cf6" />
-                                            <stop offset="100%" stopColor="#06b6d4" />
-                                        </linearGradient>
-                                    </defs>
-                                </LineChart>
-                            </ResponsiveContainer>
+                {/* Weekly Trend Chart */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="data-module p-5"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-orbitron text-sm text-white tracking-wide">WEEKLY TREND</h3>
+                            <p className="font-mono text-xs text-white/40">Last 7 days activity</p>
                         </div>
-                    </CardContent>
-                </Card>
+                        <BarChart3 className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div className="h-56 chart-container rounded-lg">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={weeklyData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,240,255,0.1)" />
+                                <XAxis dataKey="day" stroke="rgba(255,255,255,0.4)" fontSize={10} fontFamily="JetBrains Mono" />
+                                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} fontFamily="JetBrains Mono" />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'rgba(12,12,22,0.95)',
+                                        border: '1px solid rgba(0,240,255,0.3)',
+                                        borderRadius: '8px',
+                                        fontFamily: 'JetBrains Mono',
+                                        fontSize: '12px'
+                                    }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="count"
+                                    stroke="#00f0ff"
+                                    strokeWidth={2}
+                                    dot={{ fill: '#00f0ff', strokeWidth: 2, r: 4 }}
+                                    activeDot={{ r: 6, fill: '#00f0ff', stroke: '#0a0a12', strokeWidth: 2 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.div>
 
-                <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
-                    <CardHeader>
-                        <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
-                            <Users className="w-5 h-5 text-cyan-500" />
-                            User Roles
-                        </CardTitle>
-                        <CardDescription className="text-slate-500 dark:text-white/40">Who&apos;s giving feedback</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-48 lg:h-64 flex items-center justify-center">
-                            {pieData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
-                                            {pieData.map((_, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #ffffff10", borderRadius: "8px" }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <p className="text-slate-400 dark:text-white/40">No data yet</p>
-                            )}
+                {/* Radar Chart - Question Ratings */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="data-module p-5"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-orbitron text-sm text-white tracking-wide">RATING ANALYSIS</h3>
+                            <p className="font-mono text-xs text-white/40">Questions breakdown</p>
                         </div>
-                        <div className="flex flex-wrap justify-center gap-3 mt-2">
-                            {pieData.map((item, i) => (
-                                <div key={item.name} className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                                    <span className="text-slate-600 dark:text-white/60 text-xs">{item.name}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                        <TrendingUp className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div className="h-56 chart-container rounded-lg">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart data={radarData}>
+                                <PolarGrid stroke="rgba(0,240,255,0.2)" />
+                                <PolarAngleAxis
+                                    dataKey="subject"
+                                    stroke="rgba(255,255,255,0.5)"
+                                    fontSize={10}
+                                    fontFamily="JetBrains Mono"
+                                />
+                                <PolarRadiusAxis
+                                    angle={30}
+                                    domain={[0, 5]}
+                                    stroke="rgba(255,255,255,0.3)"
+                                    fontSize={8}
+                                />
+                                <Radar
+                                    name="Rating"
+                                    dataKey="value"
+                                    stroke="#a855f7"
+                                    fill="#a855f7"
+                                    fillOpacity={0.3}
+                                    strokeWidth={2}
+                                />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.div>
             </div>
 
-            {/* Ratings & Recent Activity */}
+            {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Ratings Chart */}
-                <Card className="lg:col-span-2 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
-                    <CardHeader className="flex flex-row items-center justify-between">
+                {/* Role Distribution */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="data-module p-5"
+                >
+                    <div className="flex items-center justify-between mb-4">
                         <div>
-                            <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
-                                <Star className="w-5 h-5 text-amber-500" />
-                                Average Ratings
-                            </CardTitle>
-                            <CardDescription className="text-slate-500 dark:text-white/40">By question</CardDescription>
+                            <h3 className="font-orbitron text-sm text-white tracking-wide">USER ROLES</h3>
+                            <p className="font-mono text-xs text-white/40">Distribution</p>
                         </div>
-                        <Link href="/api/export" target="_blank">
-                            <Button variant="outline" size="sm" className="bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10">
-                                <Download className="w-4 h-4 mr-2" />
-                                Export
-                            </Button>
-                        </Link>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-48 lg:h-56">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={barData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                                    <XAxis dataKey="name" stroke="#ffffff40" fontSize={11} />
-                                    <YAxis domain={[0, 5]} stroke="#ffffff40" fontSize={12} />
-                                    <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #ffffff10", borderRadius: "8px" }} />
-                                    <Bar dataKey="rating" fill="url(#barGradient)" radius={[4, 4, 0, 0]} />
-                                    <defs>
-                                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#8b5cf6" />
-                                            <stop offset="100%" stopColor="#ec4899" />
-                                        </linearGradient>
-                                    </defs>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Users className="w-5 h-5 text-pink-400" />
+                    </div>
+                    <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={40}
+                                    outerRadius={70}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                    strokeWidth={0}
+                                >
+                                    {pieData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={NEON_COLORS[index % NEON_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'rgba(12,12,22,0.95)',
+                                        border: '1px solid rgba(0,240,255,0.3)',
+                                        borderRadius: '8px',
+                                        fontFamily: 'JetBrains Mono',
+                                        fontSize: '12px'
+                                    }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {pieData.map((item, i) => (
+                            <div key={item.name} className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{ background: NEON_COLORS[i % NEON_COLORS.length] }} />
+                                <span className="font-mono text-[10px] text-white/60">{item.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
 
                 {/* Recent Activity */}
-                <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5">
-                    <CardHeader>
-                        <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-green-500" />
-                            Recent Activity
-                        </CardTitle>
-                        <CardDescription className="text-slate-500 dark:text-white/40">Latest feedback</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="data-module p-5 lg:col-span-2"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-orbitron text-sm text-white tracking-wide">RECENT ACTIVITY</h3>
+                            <p className="font-mono text-xs text-white/40">Latest feedback entries</p>
+                        </div>
+                        <Clock className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div className="space-y-2">
                         {recentFeedback.length === 0 ? (
-                            <p className="text-slate-400 dark:text-white/40 text-center py-4">No activity yet</p>
+                            <p className="font-mono text-sm text-white/40 py-4 text-center">No data available</p>
                         ) : (
                             recentFeedback.map((f, i) => (
                                 <motion.div
                                     key={f.id}
-                                    initial={{ opacity: 0, x: -10 }}
+                                    initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                    transition={{ delay: 0.6 + i * 0.1 }}
+                                    className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 transition-colors group"
                                 >
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                                        {f.percent}%
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+                                            <MessageSquare className="w-4 h-4 text-cyan-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-mono text-sm text-white">{f.subject || f.project?.name || "Unknown"}</p>
+                                            <p className="font-mono text-[10px] text-white/40">{f.user_role}</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-slate-900 dark:text-white text-sm font-medium truncate">{f.project?.name}</p>
-                                        <p className="text-slate-500 dark:text-white/40 text-xs">{f.user_role}</p>
+                                    <div className="text-right">
+                                        <p className="font-orbitron text-sm text-cyan-400">{f.percent}%</p>
+                                        <p className="font-mono text-[10px] text-white/40">
+                                            {new Date(f.created_at).toLocaleDateString()}
+                                        </p>
                                     </div>
-                                    <span className="text-slate-400 dark:text-white/30 text-xs whitespace-nowrap">
-                                        {formatDate(f.created_at, { dateStyle: "short" })}
-                                    </span>
                                 </motion.div>
                             ))
                         )}
-                        {recentFeedback.length > 0 && (
-                            <Link href="/admin/feedback">
-                                <Button variant="ghost" className="w-full text-slate-600 dark:text-white/60 hover:text-purple-500 dark:hover:text-purple-400">
-                                    View All
-                                    <ChevronRight className="w-4 h-4 ml-1" />
-                                </Button>
-                            </Link>
-                        )}
-                    </CardContent>
-                </Card>
+                    </div>
+                    {feedback.length > 5 && (
+                        <Link href="/admin/feedback" className="block mt-4">
+                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg border border-cyan-500/20 hover:border-cyan-500/40 hover:bg-cyan-500/5 transition-colors group">
+                                <span className="font-mono text-xs text-cyan-400">VIEW ALL DATA</span>
+                                <ChevronRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+                    )}
+                </motion.div>
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                <QuickAction title="View Feedback" description="See all entries" href="/admin/feedback" icon={<MessageSquare className="w-5 h-5" />} />
-                <QuickAction title="Subjects" description="Manage subjects" href="/admin/subjects" icon={<BookOpen className="w-5 h-5" />} />
-                <QuickAction title="Export" description="Download CSV" href="/api/export" icon={<Download className="w-5 h-5" />} />
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8"
+            >
+                <QuickAction
+                    title="Data Stream"
+                    description="Access all feedback entries"
+                    href="/admin/feedback"
+                    icon={<MessageSquare className="w-5 h-5" />}
+                    color="cyan"
+                />
+                <QuickAction
+                    title="Subjects"
+                    description="Manage subject database"
+                    href="/admin/subjects"
+                    icon={<BookOpen className="w-5 h-5" />}
+                    color="purple"
+                />
+                <QuickAction
+                    title="Export Data"
+                    description="Download CSV report"
+                    href="/api/export"
+                    icon={<Download className="w-5 h-5" />}
+                    color="green"
+                />
+            </motion.div>
         </AdminSidebar>
     )
 }
 
-function StatCard({ icon, title, value, change, color, href }: { icon: React.ReactNode; title: string; value: string; change: string; color: string; href: string }) {
-    const colors: Record<string, string> = {
-        purple: "from-purple-500 to-purple-600",
-        cyan: "from-cyan-500 to-cyan-600",
-        pink: "from-pink-500 to-pink-600",
-        amber: "from-amber-500 to-amber-600",
+// Data Module Component
+function DataModule({
+    icon,
+    label,
+    value,
+    suffix = "",
+    text,
+    color,
+    href,
+    delay
+}: {
+    icon: React.ReactNode
+    label: string
+    value: number
+    suffix?: string
+    text?: string
+    color: "cyan" | "purple" | "green" | "pink"
+    href: string
+    delay: number
+}) {
+    const animatedValue = useAnimatedCounter(value)
+
+    const colors = {
+        cyan: { border: "border-cyan-500/30", glow: "shadow-cyan-500/20", text: "text-cyan-400", bg: "from-cyan-500/10" },
+        purple: { border: "border-purple-500/30", glow: "shadow-purple-500/20", text: "text-purple-400", bg: "from-purple-500/10" },
+        green: { border: "border-green-500/30", glow: "shadow-green-500/20", text: "text-green-400", bg: "from-green-500/10" },
+        pink: { border: "border-pink-500/30", glow: "shadow-pink-500/20", text: "text-pink-400", bg: "from-pink-500/10" },
     }
+
+    const c = colors[color]
 
     return (
         <Link href={href}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.02 }} className="cursor-pointer">
-                <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5 hover:border-purple-500/30 transition-colors">
-                    <CardContent className="p-4 lg:p-6">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-slate-500 dark:text-white/60 text-xs lg:text-sm">{title}</p>
-                                <p className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1">{value}</p>
-                                <p className="text-xs text-purple-500 mt-1">{change}</p>
-                            </div>
-                            <div className={`p-2 lg:p-3 rounded-xl bg-gradient-to-br ${colors[color]} text-white`}>{icon}</div>
-                        </div>
-                    </CardContent>
-                </Card>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className={`relative p-4 lg:p-5 rounded-xl bg-[#12121f]/60 border ${c.border} hover:${c.glow} hover:shadow-lg transition-all cursor-pointer group overflow-hidden`}
+            >
+                {/* Corner accents */}
+                <div className={`absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 ${c.border} rounded-tl-xl`} />
+                <div className={`absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 ${c.border} rounded-br-xl`} />
+
+                {/* Gradient overlay */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${c.bg} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+
+                {/* Content */}
+                <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="font-mono text-[10px] text-white/40 uppercase tracking-widest">{label}</span>
+                        <div className={c.text}>{icon}</div>
+                    </div>
+                    <p className={`font-orbitron text-2xl lg:text-3xl font-bold ${c.text}`}>
+                        {text || `${animatedValue}${suffix}`}
+                    </p>
+                </div>
             </motion.div>
         </Link>
     )
 }
 
-function QuickAction({ title, description, href, icon }: { title: string; description: string; href: string; icon: React.ReactNode }) {
+// Quick Action Component
+function QuickAction({
+    title,
+    description,
+    href,
+    icon,
+    color
+}: {
+    title: string
+    description: string
+    href: string
+    icon: React.ReactNode
+    color: "cyan" | "purple" | "green"
+}) {
+    const colors = {
+        cyan: { border: "hover:border-cyan-500/40", text: "text-cyan-400", glow: "group-hover:shadow-cyan-500/10" },
+        purple: { border: "hover:border-purple-500/40", text: "text-purple-400", glow: "group-hover:shadow-purple-500/10" },
+        green: { border: "hover:border-green-500/40", text: "text-green-400", glow: "group-hover:shadow-green-500/10" },
+    }
+    const c = colors[color]
+
     return (
         <Link href={href}>
-            <Card className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
-                <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 group-hover:text-purple-500 transition-colors">{icon}</div>
-                    <div className="flex-1">
-                        <h3 className="text-slate-900 dark:text-white font-medium text-sm">{title}</h3>
-                        <p className="text-slate-500 dark:text-white/40 text-xs">{description}</p>
+            <div className={`p-4 rounded-xl bg-[#12121f]/40 border border-white/5 ${c.border} group transition-all hover:bg-white/[0.02] cursor-pointer ${c.glow} hover:shadow-lg`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg bg-white/5 ${c.text} group-hover:bg-white/10 transition-colors`}>
+                        {icon}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-white/20 group-hover:text-slate-500 dark:group-hover:text-white/60 transition-colors" />
-                </CardContent>
-            </Card>
+                    <div className="flex-1">
+                        <h3 className="font-mono text-sm text-white">{title}</h3>
+                        <p className="font-mono text-[10px] text-white/40">{description}</p>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 text-white/20 ${c.text.replace('text-', 'group-hover:text-')} group-hover:translate-x-1 transition-all`} />
+                </div>
+            </div>
         </Link>
     )
 }
