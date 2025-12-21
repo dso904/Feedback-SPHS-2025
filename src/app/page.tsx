@@ -201,38 +201,38 @@ export default function HomePage() {
               <div className="absolute inset-0 rounded-2xl border border-cyan-500/20 animate-pulse" />
               <div className="absolute inset-0 rounded-2xl border border-purple-500/10 scale-105 animate-ping" style={{ animationDuration: '3s' }} />
             </div>
-
+            
             <Link href="/feedback">
               <button className="relative group px-12 py-6 overflow-hidden">
                 {/* Outer glow pulse */}
                 <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-80 transition-all duration-500 animate-pulse" />
-
+                
                 {/* Main glow */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-500" />
-
+                
                 {/* Button background with gradient */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 rounded-xl" />
-
+                
                 {/* Inner darker layer for depth */}
                 <div className="absolute inset-[2px] bg-gradient-to-b from-[#0c0c16]/40 to-transparent rounded-[10px]" />
-
+                
                 {/* Scan line animation */}
                 <div className="absolute inset-0 overflow-hidden rounded-xl">
                   <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-white/20 via-transparent to-transparent animate-[scan_2s_ease-in-out_infinite]" style={{ transform: 'translateY(-100%)' }} />
                 </div>
-
+                
                 {/* Shimmer effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-xl" />
-
+                
                 {/* Border with glow */}
                 <div className="absolute inset-0 border-2 border-white/30 rounded-xl group-hover:border-white/50 transition-colors" />
-
+                
                 {/* Corner brackets - all 4 corners */}
                 <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-white/70 rounded-tl-lg group-hover:border-cyan-300 transition-colors" />
                 <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-white/70 rounded-tr-lg group-hover:border-cyan-300 transition-colors" />
                 <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-white/70 rounded-bl-lg group-hover:border-pink-300 transition-colors" />
                 <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-white/70 rounded-br-lg group-hover:border-pink-300 transition-colors" />
-
+                
                 {/* Content */}
                 <span className="relative flex items-center gap-4 text-white font-orbitron font-bold text-lg tracking-wider">
                   <Zap className="w-5 h-5 animate-pulse" />
@@ -241,7 +241,7 @@ export default function HomePage() {
                 </span>
               </button>
             </Link>
-
+            
             {/* Status text below button */}
             <motion.div
               initial={{ opacity: 0 }}
