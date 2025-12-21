@@ -190,7 +190,7 @@ export default function FeedbackPage() {
 
     if (showSuccess) {
         const emailSubject = encodeURIComponent("Inquiry about Website Development - From SPHS Exhibition")
-        const emailBody = encodeURIComponent(`Hello Team HackMinors,
+        const emailBody = encodeURIComponent(`Hello Team Hackminors,
 
 I saw your work at the South Point High School Platinum Exhibition 2025 and I'm impressed with the feedback system design.
 
@@ -205,7 +205,7 @@ Please get back to me at your earliest convenience.
 Best regards,
 [Your Name]
 [Your Contact]`)
-        const mailtoLink = `mailto:teamhackminors@gmail.com?subject=${emailSubject}&body=${emailBody}`
+        const mailtoLink = `mailto:teamHackminors@gmail.com?subject=${emailSubject}&body=${emailBody}`
 
         return (
             <div className="min-h-screen bg-[#050508] flex items-center justify-center p-4 relative overflow-hidden">
@@ -276,7 +276,7 @@ Best regards,
                                     Liked the website design?
                                 </p>
                                 <p className="text-white/80 text-sm mb-4 leading-relaxed">
-                                    This feedback system was crafted by <span className="text-cyan-400 font-semibold">Team HackMinors</span> —
+                                    This feedback system was crafted by <span className="text-cyan-400 font-semibold">Team Hackminors</span> —
                                     passionate students building amazing digital experiences.
                                 </p>
                                 <p className="font-mono text-xs text-white/40">

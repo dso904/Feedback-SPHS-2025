@@ -16,18 +16,46 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://feedback-sphs.vercel.app"
   ),
-  title: "Feedback - South Point High School Exhibition",
-  description: "Share your valuable feedback for the Platinum Exhibition projects at South Point High School",
-  keywords: ["feedback", "exhibition", "school", "south point", "platinum exhibition"],
+  title: "Feedback - Biennial Exhibition of South Point School 2025",
+  description: "Share your valuable feedback for the Biennial Exhibition projects at South Point School. Your voice matters!",
+  keywords: ["feedback", "exhibition", "school", "south point", "biennial exhibition", "SPHS 2025"],
+  authors: [{ name: "Team HackMinors" }],
+  creator: "Team HackMinors",
   icons: {
     icon: "/logo.png",
+    apple: "/logo.png",
   },
+  // Open Graph - for Facebook, WhatsApp, LinkedIn
   openGraph: {
-    title: "Feedback - South Point High School Exhibition",
-    description: "Share your valuable feedback for the Platinum Exhibition projects",
-    images: ["/logo.png"],
+    type: "website",
+    locale: "en_IN",
+    url: "/",
+    siteName: "SPHS Feedback System",
+    title: "Feedback - Biennial Exhibition of South Point School 2025",
+    description: "Share your valuable feedback for the Biennial Exhibition projects. Your voice helps us grow!",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Biennial Exhibition of South Point School 2025 - Feedback System",
+      },
+    ],
+  },
+  // Twitter Card - also used by WhatsApp and others
+  twitter: {
+    card: "summary_large_image",
+    title: "Feedback - SPHS Biennial Exhibition 2025",
+    description: "Share your valuable feedback for the exhibition projects!",
+    images: ["/og-image.png"],
+    creator: "@teamhackminors",
+  },
+  // Additional meta tags
+  robots: {
+    index: true,
+    follow: true,
   },
 }
 
