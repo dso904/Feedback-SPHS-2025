@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 
 // GET all feedback
 export async function GET(request: NextRequest) {
@@ -69,6 +70,37 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(feedback, { status: 201 })
     } catch {
+        return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+}
+
+// DELETE bulk feedback
+export async function DELETE(request: NextRequest) {
+    try {
+        const body = await request.json()
+        const { ids } = body
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return NextResponse.json(
+                { error: "ids array is required" },
+                { status: 400 }
+            )
+        }
+
+        // Use admin client to bypass RLS
+        const { error } = await supabaseAdmin
+            .from("feedback")
+            .delete()
+            .in("id", ids)
+
+        if (error) {
+            console.error("Delete error:", error)
+            return NextResponse.json({ error: error.message }, { status: 500 })
+        }
+
+        return NextResponse.json({ success: true, deleted: ids.length })
+    } catch (err) {
+        console.error("Delete request error:", err)
         return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 }

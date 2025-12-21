@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Star, MessageSquare, BarChart3, Moon, Sun } from "lucide-react"
+import { ArrowRight, Star, MessageSquare, BarChart3 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useTheme } from "next-themes"
 
 // Typing animation component
 function TypingAnimation({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
@@ -54,70 +53,75 @@ function TypingAnimation({ text, className, delay = 0 }: { text: string; classNa
 }
 
 export default function HomePage() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
-      {/* Animated background elements - darker and more subtle */}
+    <div className="min-h-screen bg-[#050508] relative overflow-hidden">
+      {/* Dynamic animated background */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Deep purple glow */}
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
-        {/* Cyan accent glow */}
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
-        {/* Center gradient */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-purple-900/5 to-transparent rounded-full" />
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.01)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        {/* Noise texture */}
-        <div className="absolute inset-0 opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iMSIvPjwvc3ZnPg==')]" />
+        {/* Animated gradient orbs that float and shift */}
+        <div className="absolute top-0 -left-40 w-[600px] h-[600px] bg-gradient-to-r from-purple-600/30 to-pink-600/20 rounded-full blur-[100px] animate-[float_8s_ease-in-out_infinite]" />
+        <div className="absolute top-1/4 -right-20 w-[500px] h-[500px] bg-gradient-to-r from-cyan-500/25 to-blue-600/20 rounded-full blur-[100px] animate-[float_10s_ease-in-out_infinite_reverse]" />
+        <div className="absolute -bottom-32 left-1/3 w-[700px] h-[700px] bg-gradient-to-r from-violet-600/20 to-fuchsia-500/15 rounded-full blur-[120px] animate-[float_12s_ease-in-out_infinite]" />
+        <div className="absolute top-1/2 left-1/4 w-[400px] h-[400px] bg-gradient-to-r from-indigo-500/20 to-purple-600/15 rounded-full blur-[80px] animate-[float_9s_ease-in-out_infinite_1s]" />
+
+        {/* Swirling aurora effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-cyan-900/10 animate-[pulse_4s_ease-in-out_infinite]" />
+
+        {/* Rotating gradient mesh */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] opacity-30">
+          <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,purple,transparent,cyan,transparent)] rounded-full blur-[60px] animate-[spin_20s_linear_infinite]" />
+        </div>
+
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+
+        {/* Noise texture for depth */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iMSIvPjwvc3ZnPg==')]" />
+
+        {/* Vignette effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,5,8,0.5)_70%,rgba(5,5,8,0.9)_100%)]" />
       </div>
 
+      {/* Custom keyframe styles */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+          33% { transform: translateY(-20px) translateX(10px) scale(1.05); }
+          66% { transform: translateY(10px) translateX(-15px) scale(0.95); }
+        }
+      `}</style>
+
+
       {/* Header */}
-      <header className="relative z-10 border-b border-white/5 backdrop-blur-md bg-black/20">
+      <header className="relative z-10 backdrop-blur-xl bg-gradient-to-r from-purple-950/80 via-slate-950/90 to-cyan-950/80 border-b border-purple-500/20">
+        {/* Gradient line at bottom of header */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-1 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10">
-              <Image
-                src="/logo.png"
-                alt="South Point School Logo"
-                width={45}
-                height={45}
-                className="rounded-lg"
-              />
+            {/* Logo with animated gradient border */}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-300" />
+              <div className="relative p-1 rounded-xl bg-slate-900">
+                <Image
+                  src="/logo.png"
+                  alt="South Point School Logo"
+                  width={45}
+                  height={45}
+                  className="rounded-lg"
+                />
+              </div>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">South Point High School</h1>
-              <p className="text-xs text-purple-400/80">Biennial Exhibition 2025</p>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">South Point High School</h1>
+              <p className="text-xs bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent font-medium">Biennial Exhibition 2025</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Dark Mode Toggle */}
-            {mounted && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/30 transition-all group"
-                title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-5 h-5 text-yellow-400 group-hover:rotate-45 transition-transform" />
-                ) : (
-                  <Moon className="w-5 h-5 text-purple-400 group-hover:-rotate-12 transition-transform" />
-                )}
-              </motion.button>
-            )}
-            <Link href="/admin/login">
-              <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10">
-                Admin Login
-              </Button>
-            </Link>
-          </div>
+          <Link href="/admin/login">
+            <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-cyan-500/10 border border-white/10 hover:border-purple-500/30 transition-all">
+              Admin Login
+            </Button>
+          </Link>
         </div>
       </header>
 

@@ -7,26 +7,21 @@ import { Button } from "@/components/ui/button"
 import {
     LayoutDashboard,
     MessageSquare,
-    FolderKanban,
     BookOpen,
     Settings,
     LogOut,
     ChevronRight,
     Menu,
     X,
-    Sun,
-    Moon,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { useTheme } from "next-themes"
 
 const NAV_ITEMS = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: MessageSquare, label: "Feedback", href: "/admin/feedback" },
     { icon: BookOpen, label: "Subjects", href: "/admin/subjects" },
-    { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 
@@ -38,7 +33,6 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     const { data: session } = useSession()
     const pathname = usePathname()
     const [mobileOpen, setMobileOpen] = useState(false)
-    const { theme, setTheme } = useTheme()
 
     const SidebarContent = () => (
         <>
@@ -84,27 +78,6 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     )
                 })}
             </nav>
-
-            {/* Theme Toggle */}
-            <div className="py-4 border-t border-white/10">
-                <Button
-                    variant="ghost"
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="w-full justify-start text-white/60 hover:text-white hover:bg-white/5"
-                >
-                    {theme === "dark" ? (
-                        <>
-                            <Sun className="w-4 h-4 mr-2" />
-                            Light Mode
-                        </>
-                    ) : (
-                        <>
-                            <Moon className="w-4 h-4 mr-2" />
-                            Dark Mode
-                        </>
-                    )}
-                </Button>
-            </div>
 
             {/* User section */}
             <div className="pt-4 border-t border-white/10">

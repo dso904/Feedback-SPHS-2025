@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock, User, Loader2, CheckCircle, Shield, AlertTriangle } from "lucide-react"
+import { Lock, User, Loader2, CheckCircle, Shield, AlertTriangle, X } from "lucide-react"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { toast } from "sonner"
 
@@ -206,8 +206,8 @@ export default function SettingsPage() {
 
                             {/* Info box */}
                             <div className={`mt-4 p-3 rounded-lg text-sm ${protectionEnabled
-                                    ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400"
-                                    : "bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400"
+                                ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400"
+                                : "bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400"
                                 }`}>
                                 {protectionEnabled ? (
                                     <p><strong>Exhibition Mode:</strong> Duplicate feedback prevention is active. Enable this during the actual exhibition.</p>
@@ -299,6 +299,22 @@ export default function SettingsPage() {
                                     className={`bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white ${errors.confirm ? "border-red-500" : ""}`}
                                 />
                                 {errors.confirm && <p className="text-red-500 text-sm">{errors.confirm}</p>}
+                                {/* Password match indicator */}
+                                {passwords.confirm && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        {passwords.new === passwords.confirm ? (
+                                            <>
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                                <span className="text-sm text-green-500">Passwords match</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <X className="w-4 h-4 text-red-500" />
+                                                <span className="text-sm text-red-500">Passwords do not match</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500">
                                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : "Update Password"}

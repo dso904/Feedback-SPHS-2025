@@ -16,7 +16,7 @@ import {
     Download,
     ChevronRight,
     MessageSquare,
-    FolderKanban,
+    BookOpen,
     Clock,
 } from "lucide-react"
 import Link from "next/link"
@@ -176,11 +176,11 @@ export default function AdminDashboard() {
                 />
                 <StatCard
                     icon={<Users className="w-5 h-5 lg:w-6 lg:h-6" />}
-                    title="Top Project"
+                    title="Top Subject"
                     value={stats.topProject.length > 12 ? stats.topProject.slice(0, 12) + "..." : stats.topProject}
                     change="Most rated"
                     color="amber"
-                    href="/admin/projects"
+                    href="/admin/subjects"
                 />
             </div>
 
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
                 <QuickAction title="View Feedback" description="See all entries" href="/admin/feedback" icon={<MessageSquare className="w-5 h-5" />} />
-                <QuickAction title="Projects" description="Manage projects" href="/admin/projects" icon={<FolderKanban className="w-5 h-5" />} />
+                <QuickAction title="Subjects" description="Manage subjects" href="/admin/subjects" icon={<BookOpen className="w-5 h-5" />} />
                 <QuickAction title="Export" description="Download CSV" href="/api/export" icon={<Download className="w-5 h-5" />} />
             </div>
         </AdminSidebar>

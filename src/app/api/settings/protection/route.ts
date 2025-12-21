@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 
 const SETTINGS_KEY = "feedback_protection_enabled"
 
@@ -39,8 +40,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Upsert the setting
-        const { error } = await supabase
+        // Upsert the setting using admin client (bypasses RLS)
+        const { error } = await supabaseAdmin
             .from("settings")
             .upsert(
                 { key: SETTINGS_KEY, value: enabled.toString() },
@@ -48,11 +49,13 @@ export async function POST(request: NextRequest) {
             )
 
         if (error) {
+            console.error("Settings update error:", error)
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
         return NextResponse.json({ enabled, message: "Setting updated successfully" })
-    } catch {
+    } catch (err) {
+        console.error("Settings error:", err)
         return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 }

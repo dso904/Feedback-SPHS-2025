@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 import { authOptions } from "@/lib/auth"
 
 // POST change password
@@ -29,14 +29,15 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Get current admin
-        const { data: admin, error: fetchError } = await supabase
+        // Get current admin using admin client (bypasses RLS)
+        const { data: admin, error: fetchError } = await supabaseAdmin
             .from("admins")
             .select("*")
             .eq("email", session.user.email)
             .single()
 
         if (fetchError || !admin) {
+            console.error("Fetch error:", fetchError)
             return NextResponse.json({ error: "Admin not found" }, { status: 404 })
         }
 
@@ -45,18 +46,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 })
         }
 
-        // Update password in database (plain text)
-        const { error: updateError } = await supabase
+        // Update password in database using admin client (bypasses RLS)
+        const { error: updateError } = await supabaseAdmin
             .from("admins")
             .update({ password_hash: newPassword })
             .eq("id", admin.id)
 
         if (updateError) {
+            console.error("Update error:", updateError)
             return NextResponse.json({ error: "Failed to update password" }, { status: 500 })
         }
 
         return NextResponse.json({ success: true, message: "Password updated successfully" })
-    } catch {
+    } catch (err) {
+        console.error("Password change error:", err)
         return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 }
