@@ -13,7 +13,6 @@ import {
     ChevronRight,
     Menu,
     X,
-    Zap,
     Shield,
 } from "lucide-react"
 import Image from "next/image"
@@ -53,7 +52,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     </div>
                 </div>
                 <div className="flex-1">
-                    <h1 className="font-orbitron text-sm font-bold text-white tracking-wider">MISSION CTRL</h1>
+                    <h1 className="font-orbitron text-sm font-bold text-white tracking-wider">ADMIN PANEL</h1>
                     <div className="flex items-center gap-1.5">
                         <div className="pulse-dot" style={{ width: '6px', height: '6px' }} />
                         <p className="font-mono text-[10px] text-cyan-400/80 uppercase tracking-widest">Online</p>
@@ -84,8 +83,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 </div>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 space-y-1 px-2">
+            {/* Navigation - scrollable */}
+            <nav className="flex-1 space-y-1 px-2 overflow-y-auto min-h-0">
                 <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest mb-3 px-3">Navigation</p>
                 {NAV_ITEMS.map((item, index) => {
                     const isActive = pathname === item.href ||
@@ -131,16 +130,9 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 })}
             </nav>
 
-            {/* Power indicator */}
-            <div className="px-4 py-3 mx-2 mb-4 rounded-lg bg-white/5 border border-white/5">
-                <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    <span className="font-mono text-xs text-white/60">Power Core Active</span>
-                </div>
-            </div>
 
-            {/* User section */}
-            <div className="px-2 pt-4 border-t border-white/10">
+            {/* User section - always visible at bottom */}
+            <div className="px-2 pt-4 border-t border-white/10 mt-auto flex-shrink-0">
                 <div className="flex items-center gap-3 mb-4 p-2">
                     {/* Avatar with holographic ring */}
                     <div className="relative">
@@ -200,7 +192,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="hidden lg:flex w-64 bg-[#0c0c16]/90 backdrop-blur-xl border-r border-cyan-500/10 p-4 flex-col relative z-10"
+                className="hidden lg:flex w-64 h-screen sticky top-0 bg-[#0c0c16]/90 backdrop-blur-xl border-r border-cyan-500/10 p-4 flex-col relative z-10"
             >
                 {/* Top edge glow */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />

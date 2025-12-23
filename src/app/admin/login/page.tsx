@@ -34,7 +34,12 @@ export default function AdminLoginPage() {
                 toast.error("Access denied: Invalid credentials")
             } else {
                 toast.success("Access granted!")
-                router.push("/admin")
+                // Use hidden form POST to enable browser's form resubmission dialog on refresh
+                const form = document.createElement('form')
+                form.method = 'POST'
+                form.action = '/api/admin/enter'
+                document.body.appendChild(form)
+                form.submit()
             }
         } catch {
             toast.error("System error: Connection failed")

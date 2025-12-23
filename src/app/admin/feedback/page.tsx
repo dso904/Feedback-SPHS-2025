@@ -63,6 +63,7 @@ import { EmptyState } from "@/components/admin/empty-state"
 import type { Feedback } from "@/lib/types"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
+import { ExportDialog } from "@/components/admin/export-dialog"
 
 const ITEMS_PER_PAGE = 10
 
@@ -81,6 +82,7 @@ export default function FeedbackPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [showExportDialog, setShowExportDialog] = useState(false)
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -298,12 +300,13 @@ export default function FeedbackPage() {
                         {filteredFeedback.length} of {feedback.length} entries • Real-time sync active
                     </p>
                 </div>
-                <Link href="/api/export" target="_blank">
-                    <Button className="futuristic-btn px-6 py-2">
-                        <Download className="w-4 h-4 mr-2" />
-                        EXPORT CSV
-                    </Button>
-                </Link>
+                <Button
+                    onClick={() => setShowExportDialog(true)}
+                    className="futuristic-btn px-6 py-2"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    EXPORT DATA
+                </Button>
             </motion.div>
 
             {/* Bulk Action Bar */}
@@ -622,6 +625,14 @@ export default function FeedbackPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Export Dialog */}
+            <ExportDialog
+                open={showExportDialog}
+                onOpenChange={setShowExportDialog}
+                feedback={feedback}
+                totalCount={feedback.length}
+            />
         </AdminSidebar>
     )
 }

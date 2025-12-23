@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                     suffix="%"
                     color="purple"
                     href="/admin/feedback"
-                    delay={0.2}
+                    delay={0}
                 />
                 <DataModule
                     icon={<Zap className="w-5 h-5" />}
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                     suffix=""
                     color="green"
                     href="/admin/feedback"
-                    delay={0.2}
+                    delay={0}
                 />
                 <DataModule
                     icon={<Star className="w-5 h-5" />}
@@ -222,7 +222,7 @@ export default function AdminDashboard() {
                     text={stats.topProject.length > 10 ? stats.topProject.slice(0, 10) + "..." : stats.topProject}
                     color="pink"
                     href="/admin/subjects"
-                    delay={0.3}
+                    delay={0}
                 />
             </div>
 
