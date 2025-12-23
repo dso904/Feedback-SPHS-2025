@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 SPHS Feedback System
+# 🚀 South Point High School Feedback System
 
 ### 🌟 Biennial Exhibition of South Point School 2025 🌟
 
@@ -620,20 +620,6 @@ To test your previews:
 - [Facebook Debugger](https://developers.facebook.com/tools/debug/)
 - [Twitter Card Validator](https://cards-dev.twitter.com/validator)
 - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/)
-
----
-
-## 🤝 Contributing
-
-This is a private project for South Point School. For authorized contributors:
-
-1. Clone the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
----
 
 ## 👨‍💻 Credits
 
