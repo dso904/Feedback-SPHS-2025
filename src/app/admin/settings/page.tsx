@@ -39,7 +39,9 @@ export default function SettingsPage() {
 
     const fetchProtectionSetting = async () => {
         try {
-            const res = await fetch("/api/settings/protection")
+            const res = await fetch(`/api/settings/protection?t=${Date.now()}`, {
+                cache: "no-store"
+            })
             const data = await res.json()
             setProtectionEnabled(data.enabled || false)
         } catch (error) {
@@ -53,9 +55,10 @@ export default function SettingsPage() {
         setProtectionUpdating(true)
         try {
             const newValue = !protectionEnabled
-            const res = await fetch("/api/settings/protection", {
+            const res = await fetch(`/api/settings/protection?t=${Date.now()}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                cache: "no-store",
                 body: JSON.stringify({ enabled: newValue }),
             })
 

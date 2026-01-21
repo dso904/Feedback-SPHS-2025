@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 
 const SETTINGS_KEY = "feedback_protection_enabled"
+export const dynamic = 'force-dynamic'
 
 // GET current protection setting
 export async function GET() {
     try {
-        const { data, error } = await supabase
+        // Use admin client to bypass RLS (consistent with POST)
+        const { data, error } = await supabaseAdmin
             .from("settings")
             .select("value")
             .eq("key", SETTINGS_KEY)
@@ -18,11 +19,13 @@ export async function GET() {
             if (error.code === "PGRST116") {
                 return NextResponse.json({ enabled: false })
             }
+            console.error("Settings GET error:", error)
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
         return NextResponse.json({ enabled: data.value === "true" })
-    } catch {
+    } catch (err) {
+        console.error("Settings GET exception:", err)
         return NextResponse.json({ enabled: false })
     }
 }
