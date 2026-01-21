@@ -4,14 +4,15 @@ import { supabaseAdmin } from "@/lib/supabase-admin"
 import { getClientIP } from "@/lib/get-client-ip"
 
 const SETTINGS_KEY = "feedback_protection_enabled"
+export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/protection/check
  * 
  * Pre-submission protection check
- * Checks if the user (based on IP + fingerprint) has already submitted feedback
+ * Checks if the user (based on fingerprint) has already submitted feedback FOR THIS SUBJECT
  * 
- * Body: { fingerprint: string }
+ * Body: { fingerprint: string, subject?: string }
  * Returns: { allowed: boolean, reason?: string }
  */
 export async function POST(request: NextRequest) {
@@ -33,9 +34,9 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        // 2. Get fingerprint from request body
+        // 2. Get fingerprint and subject from request body
         const body = await request.json()
-        const { fingerprint } = body
+        const { fingerprint, subject } = body
 
         if (!fingerprint) {
             return NextResponse.json(
@@ -44,34 +45,59 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 3. Extract client IP
-        const clientIP = getClientIP(request)
-
-        // 4. Check submission_logs for existing entries
-        // Logic:
-        // - Same fingerprint (regardless of IP) = BLOCK (same device, VPN/network change)
-        // - Same IP + Same fingerprint = BLOCK (exact duplicate)
-        // Note: Same IP + Different fingerprint = ALLOW (shared network)
-
-        const { data: existingLogs, error: fetchError } = await supabaseAdmin
-            .from("submission_logs")
-            .select("id, ip_address, fingerprint_hash, blocked")
-            .eq("fingerprint_hash", fingerprint)
-            .eq("blocked", false) // Only check successful submissions
-            .limit(1)
-
-        if (fetchError) {
-            console.error("Error checking submission logs:", fetchError)
-            // On error, allow submission (fail open for better UX)
+        // CRITICAL UPDATE: If no subject is provided, we MUST allow.
+        // This is to prevent the "page load" check from blocking the user globally.
+        // We only check for duplicates when we know WHICH subject they are trying to submit.
+        if (!subject) {
             return NextResponse.json({
                 allowed: true,
-                reason: "check_error"
+                reason: "global_check_skipped"
             })
         }
 
-        // 5. If fingerprint exists in logs, block
-        if (existingLogs && existingLogs.length > 0) {
-            const existingEntry = existingLogs[0]
+        // 3. Check for existing submissions for THIS subject by THIS fingerprint
+        // Strategy: 
+        // a. Get all successful submission logs for this fingerprint
+        // b. Get the feedback details for those submissions
+        // c. Check if any matches the requested subject
+
+        // Step A: Get logs
+        const { data: existingLogs, error: logError } = await supabaseAdmin
+            .from("submission_logs")
+            .select("feedback_id")
+            .eq("fingerprint_hash", fingerprint)
+            .eq("blocked", false)
+            .not("feedback_id", "is", null)
+
+        if (logError) {
+            console.error("Error checking submission logs:", logError)
+            return NextResponse.json({ allowed: true, reason: "check_error" })
+        }
+
+        if (!existingLogs || existingLogs.length === 0) {
+            // No previous submissions at all -> Allow
+            return NextResponse.json({ allowed: true, reason: "new_visitor" })
+        }
+
+        const feedbackIds = existingLogs.map(log => log.feedback_id)
+
+        // Step B: Check feedback table for subject match
+        // We want to find IF there is any feedback with these IDs that has the SAME subject
+        const { data: duplicateSubject, error: feedbackError } = await supabaseAdmin
+            .from("feedback")
+            .select("id")
+            .in("id", feedbackIds)
+            .eq("subject", subject)
+            .maybeSingle()
+
+        if (feedbackError) {
+            console.error("Error checking feedback subject:", feedbackError)
+            return NextResponse.json({ allowed: true, reason: "check_error" })
+        }
+
+        // 4. If duplicate found -> BLOCK
+        if (duplicateSubject) {
+            const clientIP = getClientIP(request)
 
             // Log the blocked attempt
             await supabaseAdmin
@@ -81,23 +107,19 @@ export async function POST(request: NextRequest) {
                     fingerprint_hash: fingerprint,
                     user_agent: request.headers.get("user-agent") || "unknown",
                     blocked: true,
-                    block_reason: existingEntry.ip_address === clientIP
-                        ? "ip_fingerprint_match"
-                        : "fingerprint_match"
+                    block_reason: `duplicate_subject:${subject}`
                 })
 
             return NextResponse.json({
                 allowed: false,
-                reason: existingEntry.ip_address === clientIP
-                    ? "duplicate_device_ip"
-                    : "duplicate_device"
+                reason: "duplicate_subject"
             })
         }
 
-        // 6. No matching fingerprint found - allow submission
+        // 5. No duplicate for this subject found -> ALLOW
         return NextResponse.json({
             allowed: true,
-            reason: "new_submission"
+            reason: "new_subject_submission"
         })
 
     } catch (error) {

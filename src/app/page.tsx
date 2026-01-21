@@ -121,7 +121,7 @@ export default function HomePage() {
               <h1 className="text-lg font-bold text-white tracking-wide">South Point High School</h1>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                <p className="text-xs text-cyan-400/80 font-mono uppercase tracking-widest">Exhibition 2025</p>
+                <p className="text-xs text-cyan-400/80 font-mono uppercase tracking-widest">Exhibition 2026</p>
               </div>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function HomePage() {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="font-mono text-xs text-white/30 uppercase tracking-widest">
-            © 2025 South Point High School • Team Hackminors
+            © 2026 South Point High School • Team Hackminors
           </p>
         </div>
       </footer>

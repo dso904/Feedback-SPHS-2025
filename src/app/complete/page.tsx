@@ -167,7 +167,7 @@ export default function CompletePage() {
                     transition={{ delay: 1.1 }}
                     className="mt-8 text-white/30 text-xs"
                 >
-                    Platinum Exhibition 2025 • South Point High School
+                    Exhibition 2026 • South Point High School
                 </motion.p>
             </motion.div>
         </div>

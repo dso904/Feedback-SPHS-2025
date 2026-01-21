@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, ArrowRight, Check, Star, Loader2, Zap, Database, Shield, Cpu } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, Star, Loader2, Zap, Database, Shield, Cpu, AlertTriangle, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
 import { USER_ROLES, RATING_LABELS, DEFAULT_QUESTIONS } from "@/lib/types"
 import { SuccessAnimation } from "@/components/success-animation"
-import { hasSubmittedFeedback, markFeedbackSubmitted } from "@/lib/feedback-guard"
+import { markFeedbackSubmitted } from "@/lib/feedback-guard"
 import { getDeviceFingerprint, storeFingerprint } from "@/lib/fingerprint"
 import ReCAPTCHA from "react-google-recaptcha"
 
@@ -42,6 +42,7 @@ export default function FeedbackPage() {
     const [captchaVerified, setCaptchaVerified] = useState(false)
     const [checkingStatus, setCheckingStatus] = useState(true)
     const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null)
+    const [blockedSubject, setBlockedSubject] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
         userRole: "",
@@ -51,43 +52,20 @@ export default function FeedbackPage() {
     })
 
     useEffect(() => {
-        const checkProtectionAndSubmission = async () => {
+        // Only generate fingerprint for later use (subject-scoped check)
+        // We do NOT check protection here anymore to avoid global blocking
+        const initFingerprint = async () => {
             try {
-                // Generate device fingerprint first
                 const fingerprint = await getDeviceFingerprint()
                 setDeviceFingerprint(fingerprint)
-
-                // Call protection check API - it handles the toggle internally
-                // If protection is OFF, it returns { allowed: true }
-                // If protection is ON, it checks fingerprint + localStorage
-                const res = await fetch("/api/protection/check", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ fingerprint })
-                })
-                const data = await res.json()
-
-                // Only block if protection is enabled AND check failed
-                if (!data.allowed) {
-                    // Also check localStorage as a backup
-                    router.replace("/already-submitted")
-                } else if (data.reason === "protection_disabled") {
-                    // Protection is OFF - allow regardless of localStorage
-                    setCheckingStatus(false)
-                } else if (hasSubmittedFeedback()) {
-                    // Protection is ON and localStorage flag exists
-                    router.replace("/already-submitted")
-                } else {
-                    setCheckingStatus(false)
-                }
-            } catch (error) {
-                console.error("Protection check failed:", error)
-                // On error, allow submission (fail open)
+            } catch (e) {
+                console.error("Fingerprint init failed:", e)
+            } finally {
                 setCheckingStatus(false)
             }
         }
-        checkProtectionAndSubmission()
-    }, [router])
+        initFingerprint()
+    }, [])
 
     useEffect(() => {
         fetchSubjects()
@@ -114,6 +92,48 @@ export default function FeedbackPage() {
             case 3: return Object.values(formData.ratings).every(r => r > 0)
             default: return true
         }
+    }
+
+    const handleNext = async () => {
+        if (currentStep === 2) {
+            // Subject selection step - Verify protection
+            if (!formData.subject) return
+
+            const toastId = toast.loading("Verifying access...")
+
+            try {
+                const res = await fetch(`/api/protection/check?t=${Date.now()}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    cache: "no-store",
+                    body: JSON.stringify({
+                        fingerprint: deviceFingerprint,
+                        subject: formData.subject
+                    })
+                })
+                const data = await res.json()
+
+                toast.dismiss(toastId)
+
+                if (!data.allowed) {
+                    // Show modal instead of just toast
+                    setBlockedSubject(formData.subject)
+                    toast.error("Duplicate submission detected")
+                    return
+                }
+
+                setCurrentStep(3)
+            } catch (e) {
+                console.error("Protection check error:", e)
+                toast.dismiss(toastId)
+                toast.error("Security verify failed. Please check connection.")
+                // Fail CLOSED - Do not allow proceed if check fails
+                return
+            }
+            return
+        }
+
+        setCurrentStep((s) => s + 1)
     }
 
     const handleSubmit = async () => {
@@ -145,7 +165,14 @@ export default function FeedbackPage() {
                 }),
             })
 
-            if (!res.ok) throw new Error("Failed to submit")
+            if (!res.ok) {
+                // Check if it's a duplicate subject rejection (403)
+                if (res.status === 403) {
+                    setBlockedSubject(formData.subject)
+                    return
+                }
+                throw new Error("Failed to submit")
+            }
 
             // Mark as submitted in local storage AND store fingerprint
             markFeedbackSubmitted()
@@ -192,7 +219,7 @@ export default function FeedbackPage() {
         const emailSubject = encodeURIComponent("Inquiry about Website Development - From SPHS Exhibition")
         const emailBody = encodeURIComponent(`Hello Team Hackminors,
 
-I saw your work at the South Point High School Platinum Exhibition 2025 and I'm impressed with the feedback system design.
+I saw your work at the South Point High School Exhibition 2026 and I'm impressed with the feedback system design.
 
 I would like to inquire about:
 [ ] Website Development
@@ -488,7 +515,7 @@ Best regards,
 
                                 {currentStep < 4 ? (
                                     <button
-                                        onClick={() => setCurrentStep((s) => s + 1)}
+                                        onClick={handleNext}
                                         disabled={!canProceed()}
                                         className="relative group px-6 py-2.5 overflow-hidden disabled:opacity-30 disabled:cursor-not-allowed"
                                     >
@@ -527,6 +554,97 @@ Best regards,
                     </div>
                 </div>
             </main>
+
+            {/* Duplicate Subject Blocking Modal */}
+            <AnimatePresence>
+                {blockedSubject && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            transition={{ type: "spring", damping: 20 }}
+                            className="relative w-full max-w-md"
+                        >
+                            {/* Modal Card */}
+                            <div className="relative bg-[#0c0c16]/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl overflow-hidden shadow-2xl shadow-amber-500/20">
+                                {/* Top warning line */}
+                                <div className="h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+
+                                {/* Corner accents */}
+                                <div className="absolute top-1 left-0 w-8 h-8 border-l-2 border-t-2 border-amber-500/50 rounded-tl-2xl" />
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-amber-500/50 rounded-br-2xl" />
+
+                                <div className="p-6 pt-8">
+                                    {/* Warning Icon */}
+                                    <div className="flex justify-center mb-6">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-amber-500/30 rounded-full blur-xl animate-pulse" />
+                                            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center border-4 border-[#0c0c16]">
+                                                <AlertTriangle className="w-10 h-10 text-white" strokeWidth={2} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h2 className="font-orbitron text-xl text-center text-white tracking-wide mb-2">
+                                        ACCESS DENIED
+                                    </h2>
+
+                                    {/* Subject Badge */}
+                                    <div className="flex justify-center mb-4">
+                                        <span className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full font-mono text-sm text-amber-400">
+                                            {blockedSubject}
+                                        </span>
+                                    </div>
+
+                                    {/* Message */}
+                                    <p className="text-center text-white/70 mb-2 font-mono text-sm">
+                                        You have already submitted feedback for this subject.
+                                    </p>
+                                    <p className="text-center text-white/40 mb-6 font-mono text-xs">
+                                        Each visitor can only submit one feedback per subject,<br />regardless of the role selected.
+                                    </p>
+
+                                    {/* Info Box */}
+                                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 mb-6">
+                                        <div className="flex items-start gap-3">
+                                            <Shield className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-mono text-xs text-amber-400 mb-1">PROTECTION ACTIVE</p>
+                                                <p className="font-mono text-xs text-white/50">
+                                                    Your device has been identified. Please select a different subject to provide feedback.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <button
+                                        onClick={() => {
+                                            setBlockedSubject(null)
+                                            setFormData({ ...formData, subject: "" })
+                                        }}
+                                        className="w-full relative group py-3 overflow-hidden rounded-xl"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl" />
+                                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <span className="relative flex items-center justify-center gap-2 font-mono text-sm text-white uppercase tracking-wider">
+                                            <ArrowLeft className="w-4 h-4" />
+                                            Choose Different Subject
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

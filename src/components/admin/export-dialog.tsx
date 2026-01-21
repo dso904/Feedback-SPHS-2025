@@ -114,7 +114,7 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         doc.setTextColor(168, 85, 247)
         doc.setFontSize(10)
         doc.setFont("helvetica", "normal")
-        doc.text("Biennial Exhibition 2025 • Mission Control Export", 14, 32)
+        doc.text("Biennial Exhibition 2026 • Mission Control Export", 14, 32)
 
         doc.setTextColor(0, 240, 255)
         doc.setFontSize(9)
@@ -287,7 +287,7 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
 
         dashboardSheet.mergeCells("A2:H2")
         const subtitleCell = dashboardSheet.getCell("A2")
-        subtitleCell.value = `Biennial Exhibition 2025 • Generated: ${new Date().toLocaleString("en-IN")}`
+        subtitleCell.value = `Biennial Exhibition 2026 • Generated: ${new Date().toLocaleString("en-IN")}`
         subtitleCell.style = {
             font: { size: 10, color: { argb: "FFA855F7" } },
             fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } },

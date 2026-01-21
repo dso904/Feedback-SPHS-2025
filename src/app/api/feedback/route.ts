@@ -49,6 +49,50 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Final Security Check: Prevent duplicate subject submission
+        if (fingerprint) {
+            const { data: existingLogs } = await supabaseAdmin
+                .from("submission_logs")
+                .select("feedback_id")
+                .eq("fingerprint_hash", fingerprint)
+                .eq("blocked", false)
+                .not("feedback_id", "is", null)
+
+            if (existingLogs && existingLogs.length > 0) {
+                const feedbackIds = existingLogs.map(l => l.feedback_id)
+                // Check if any of these feedback entries match the current subject
+                const { data: duplicate } = await supabaseAdmin
+                    .from("feedback")
+                    .select("id")
+                    .in("id", feedbackIds)
+                    .eq("subject", subject)
+                    .maybeSingle()
+
+                if (duplicate) {
+                    // Log the blocked attempt (late rejection)
+                    const clientIP = getClientIP(request)
+                    try {
+                        await supabaseAdmin
+                            .from("submission_logs")
+                            .insert({
+                                ip_address: clientIP,
+                                fingerprint_hash: fingerprint,
+                                user_agent: request.headers.get("user-agent") || "unknown",
+                                blocked: true,
+                                block_reason: `duplicate_subject_late_reject:${subject}`
+                            })
+                    } catch (e) {
+                        console.error("Failed to log late rejection:", e)
+                    }
+
+                    return NextResponse.json(
+                        { error: "You have already submitted feedback for this subject" },
+                        { status: 403 }
+                    )
+                }
+            }
+        }
+
         // Insert feedback
         const { data: feedback, error } = await supabase
             .from("feedback")
