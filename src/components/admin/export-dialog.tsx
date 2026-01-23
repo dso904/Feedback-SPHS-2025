@@ -534,8 +534,14 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         metricsData.forEach((row, i) => {
             dashboardSheet.getCell(`A${5 + i}`).value = row[0]
             dashboardSheet.getCell(`B${5 + i}`).value = row[1]
-            dashboardSheet.getCell(`A${5 + i}`).style = { font: { color: { argb: "FFFFFFFF" } } }
-            dashboardSheet.getCell(`B${5 + i}`).style = { font: { bold: true, color: { argb: "FF00FF88" } } }
+            dashboardSheet.getCell(`A${5 + i}`).style = {
+                font: { color: { argb: "FFFFFFFF" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
+            dashboardSheet.getCell(`B${5 + i}`).style = {
+                font: { bold: true, color: { argb: "FF00FF88" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
         })
 
         // ═══════════════════════════════════════════════════════════════
@@ -553,8 +559,14 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         Object.entries(roleDistribution).forEach(([role, count]) => {
             dashboardSheet.getCell(`A${rowNum}`).value = role
             dashboardSheet.getCell(`B${rowNum}`).value = count
-            dashboardSheet.getCell(`A${rowNum}`).style = { font: { color: { argb: "FFFFFFFF" } } }
-            dashboardSheet.getCell(`B${rowNum}`).style = { font: { color: { argb: "FF00F0FF" } } }
+            dashboardSheet.getCell(`A${rowNum}`).style = {
+                font: { color: { argb: "FFFFFFFF" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
+            dashboardSheet.getCell(`B${rowNum}`).style = {
+                font: { color: { argb: "FF00F0FF" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
             rowNum++
         })
 
@@ -574,8 +586,14 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         Object.entries(questionAverages).forEach(([question, avg]) => {
             dashboardSheet.getCell(`A${qRow}`).value = question
             dashboardSheet.getCell(`B${qRow}`).value = avg
-            dashboardSheet.getCell(`A${qRow}`).style = { font: { color: { argb: "FFFFFFFF" } } }
-            dashboardSheet.getCell(`B${qRow}`).style = { font: { color: { argb: "FFA855F7" } } }
+            dashboardSheet.getCell(`A${qRow}`).style = {
+                font: { color: { argb: "FFFFFFFF" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
+            dashboardSheet.getCell(`B${qRow}`).style = {
+                font: { color: { argb: "FFA855F7" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
             qRow++
         })
 
@@ -595,8 +613,14 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         Object.entries(ratingDistribution).forEach(([category, count]) => {
             dashboardSheet.getCell(`A${rRow}`).value = category
             dashboardSheet.getCell(`B${rRow}`).value = count
-            dashboardSheet.getCell(`A${rRow}`).style = { font: { color: { argb: "FFFFFFFF" } } }
-            dashboardSheet.getCell(`B${rRow}`).style = { font: { color: { argb: "FFFF0080" } } }
+            dashboardSheet.getCell(`A${rRow}`).style = {
+                font: { color: { argb: "FFFFFFFF" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
+            dashboardSheet.getCell(`B${rRow}`).style = {
+                font: { color: { argb: "FFFF0080" } },
+                fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C0C16" } }
+            }
             rRow++
         })
 

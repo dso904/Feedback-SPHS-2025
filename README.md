@@ -5,9 +5,9 @@
 ### 🌟 Biennial Exhibition of South Point School 2025 🌟
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
   <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind"/>
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind"/>
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase"/>
 </p>
 
@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/NextAuth.js-Security-000?style=flat-square" alt="NextAuth"/>
   <img src="https://img.shields.io/badge/Vercel-Deployed-000?style=flat-square&logo=vercel" alt="Vercel"/>
   <img src="https://img.shields.io/badge/FingerprintJS-Protection-orange?style=flat-square" alt="FingerprintJS"/>
+  <img src="https://img.shields.io/badge/Recharts-Analytics-8884d8?style=flat-square" alt="Recharts"/>
 </p>
 
 ---
@@ -40,6 +41,8 @@
 - [🎨 User Interface](#-user-interface)
 - [🛡️ Protection System](#️-protection-system)
 - [👨‍💼 Admin Panel](#-admin-panel)
+- [📊 Data Export](#-data-export)
+- [🏆 Leaderboard](#-leaderboard)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [📁 Project Structure](#-project-structure)
 - [🚀 Getting Started](#-getting-started)
@@ -162,17 +165,17 @@ All feedback attempts are logged with:
 #### 📈 Analytics Cards
 - Total Submissions Count
 - Average Rating (%)
-- Submissions Today
+- Submissions This Week
 - Top Rated Subject
 
 </td>
 <td>
 
 #### 📊 Charts
-- Rating Distribution (Bar)
-- Role Breakdown (Pie)
-- Submissions Over Time (Line)
-- Subject Comparison
+- Weekly Trend (Line Chart)
+- Role Distribution (Pie Chart)
+- Top 5 Subjects with Progress Bars
+- Recent Activity Feed
 
 </td>
 </tr>
@@ -183,7 +186,8 @@ All feedback attempts are logged with:
 | Icon | Page | Description |
 |:----:|------|-------------|
 | 🏠 | **Command Center** | Analytics dashboard with live stats |
-| 📨 | **Data Stream** | View all feedback entries |
+| 📨 | **Data Stream** | View all feedback entries with filters |
+| 🏆 | **Leaderboard** | Subject rankings with detailed modal views |
 | 📚 | **Subjects** | Add/remove/edit subjects |
 | 🛡️ | **Submission Logs** | IP + fingerprint tracking |
 | ⚙️ | **System Config** | Settings & protection toggle |
@@ -191,11 +195,85 @@ All feedback attempts are logged with:
 ### 🔧 Admin Features
 
 - **Bulk Delete** — Select multiple feedbacks to delete
-- **CSV Export** — Download all data for analysis
-- **Filter & Search** — By subject, role, date, rating
+- **Advanced Filtering** — By subject, role, date range, rating
+- **Search** — Full-text search across entries
 - **Real-time Updates** — Auto-refresh data
 - **Password Change** — Secure password management
 - **Defense Shield Toggle** — Enable/disable protection
+- **Subject Icons** — Dynamic icons based on subject name
+
+---
+
+## 📊 Data Export
+
+### 🚀 Export Formats
+
+The system supports two premium export formats:
+
+<table>
+<tr>
+<td width="50%">
+
+#### 📑 PDF Report
+- **Cover Page** with analytics summary
+- **4 Statistics Cards** — Total, Avg Score, Excellent, Top Role
+- **3 Embedded Charts** — Role Pie, Rating Pie, Question Bar
+- **Color-coded Score Column** — Green/Purple/Orange/Pink
+- **Dark Cyberpunk Theme** — Matches the app aesthetic
+- **Corner Brackets** — Decorative design elements
+- **Professional Footer** — Page numbers, branding
+
+</td>
+<td width="50%">
+
+#### 📊 Excel Analytics
+- **Analytics Dashboard Sheet**
+  - Key Metrics section
+  - Role Distribution with Pie Chart
+  - Question Averages with Bar Chart
+  - Rating Distribution
+- **Raw Data Sheet**
+  - All feedback entries
+  - Color-coded scoring
+  - Date formatting
+- **Embedded Chart Images** — Visual analytics
+- **Dark Theme Styling** — Consistent branding
+
+</td>
+</tr>
+</table>
+
+### 📈 Chart Generation
+
+Charts are generated using **QuickChart.io** API:
+- Doughnut charts for role distribution
+- Pie charts for rating breakdown
+- Bar charts for question averages
+- All styled with neon color palette
+
+---
+
+## 🏆 Leaderboard
+
+### Subject Rankings
+
+The Leaderboard page provides a comprehensive view of all subjects:
+
+- **Ranked by Total Score** — Highest scoring subjects at top
+- **Progress Bars** — Visual representation of scores
+- **Dynamic Icons** — Subject-specific icons (Science 🧬, Math 📐, etc.)
+- **Color-coded Rankings** — Gold/Silver/Bronze for top 3
+- **Stats Overview** — Total subjects, top score, leader, avg rating
+
+### 📋 Subject Feedback Modal
+
+Click any subject to view a **full-page modal** with:
+- All feedback entries for that subject
+- Individual Q1-Q6 rating badges (color-coded)
+- User role information
+- Submission dates
+- Total and percentage scores
+- Smooth animations with Framer Motion
 
 ---
 
@@ -205,25 +283,29 @@ All feedback attempts are logged with:
 <tr><th>Category</th><th>Technology</th><th>Purpose</th></tr>
 <tr>
 <td rowspan="3"><strong>🎨 Frontend</strong></td>
-<td><img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" /></td>
-<td>React framework with App Router</td>
+<td><img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" /></td>
+<td>React framework with App Router & Turbopack</td>
 </tr>
 <tr>
 <td><img src="https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript" /></td>
 <td>Type-safe development</td>
 </tr>
 <tr>
-<td><img src="https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwindcss" /></td>
+<td><img src="https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwindcss" /></td>
 <td>Utility-first CSS</td>
 </tr>
 <tr>
-<td rowspan="2"><strong>🎭 UI/UX</strong></td>
+<td rowspan="3"><strong>🎭 UI/UX</strong></td>
 <td><img src="https://img.shields.io/badge/shadcn/ui-Components-000" /></td>
-<td>Accessible UI primitives</td>
+<td>Accessible UI primitives (Radix-based)</td>
 </tr>
 <tr>
 <td><img src="https://img.shields.io/badge/Framer_Motion-Animations-FF0055?logo=framer" /></td>
-<td>Smooth animations</td>
+<td>Smooth animations & transitions</td>
+</tr>
+<tr>
+<td><img src="https://img.shields.io/badge/Lucide-Icons-f56565" /></td>
+<td>Beautiful consistent iconography</td>
 </tr>
 <tr>
 <td rowspan="2"><strong>🗄️ Backend</strong></td>
@@ -244,14 +326,27 @@ All feedback attempts are logged with:
 <td>Bot prevention</td>
 </tr>
 <tr>
-<td><strong>📊 Analytics</strong></td>
+<td rowspan="2"><strong>📊 Analytics</strong></td>
 <td><img src="https://img.shields.io/badge/Recharts-Charts-8884d8" /></td>
 <td>Dashboard visualizations</td>
 </tr>
 <tr>
+<td><img src="https://img.shields.io/badge/QuickChart-Export-22c55e" /></td>
+<td>Chart image generation for exports</td>
+</tr>
+<tr>
+<td rowspan="2"><strong>📄 Export</strong></td>
+<td><img src="https://img.shields.io/badge/ExcelJS-Spreadsheets-217346" /></td>
+<td>Excel file generation with charts</td>
+</tr>
+<tr>
+<td><img src="https://img.shields.io/badge/jsPDF-PDF_Reports-d32f2f" /></td>
+<td>Premium PDF document generation</td>
+</tr>
+<tr>
 <td><strong>☁️ Hosting</strong></td>
 <td><img src="https://img.shields.io/badge/Vercel-Deployment-000?logo=vercel" /></td>
-<td>Edge deployment</td>
+<td>Edge deployment with instant rollbacks</td>
 </tr>
 </table>
 
@@ -269,21 +364,26 @@ All feedback attempts are logged with:
 │   ├── 📂 app/
 │   │   ├── 📂 admin/
 │   │   │   ├── page.tsx          # Dashboard (Command Center)
-│   │   │   ├── 📂 feedback/      # View all feedback
+│   │   │   ├── layout.tsx        # Admin layout wrapper
+│   │   │   ├── futuristic.css    # Admin theme styles
+│   │   │   ├── 📂 feedback/      # View all feedback (Data Stream)
+│   │   │   ├── 📂 leaderboard/   # Subject rankings
 │   │   │   ├── 📂 subjects/      # Manage subjects
+│   │   │   ├── 📂 projects/      # Project management
 │   │   │   ├── 📂 logs/          # Submission logs viewer
 │   │   │   ├── 📂 settings/      # System config
-│   │   │   ├── 📂 login/         # Admin login
-│   │   │   └── futuristic.css    # Admin theme styles
+│   │   │   └── 📂 login/         # Admin login
 │   │   │
 │   │   ├── 📂 api/
 │   │   │   ├── 📂 feedback/      # CRUD for feedback
 │   │   │   ├── 📂 subjects/      # CRUD for subjects
+│   │   │   ├── 📂 projects/      # CRUD for projects
+│   │   │   ├── 📂 questions/     # Dynamic questions
 │   │   │   ├── 📂 protection/
 │   │   │   │   ├── check/        # Pre-submission validation
 │   │   │   │   └── logs/         # Submission logs API
 │   │   │   ├── 📂 settings/      # Protection toggle
-│   │   │   ├── 📂 export/        # CSV export
+│   │   │   ├── 📂 admin/         # Admin operations
 │   │   │   └── 📂 auth/          # NextAuth handlers
 │   │   │
 │   │   ├── 📂 feedback/          # 4-step feedback wizard
@@ -295,8 +395,14 @@ All feedback attempts are logged with:
 │   │
 │   ├── 📂 components/
 │   │   ├── 📂 admin/             # Admin-specific components
-│   │   │   └── sidebar.tsx       # Navigation sidebar
-│   │   ├── 📂 ui/                # shadcn/ui components
+│   │   │   ├── sidebar.tsx       # Navigation sidebar
+│   │   │   ├── export-dialog.tsx # PDF & Excel export
+│   │   │   ├── auth-guard.tsx    # Route protection
+│   │   │   ├── confirm-dialog.tsx# Confirmation modals
+│   │   │   ├── empty-state.tsx   # Empty data states
+│   │   │   └── skeletons.tsx     # Loading skeletons
+│   │   │
+│   │   ├── 📂 ui/                # shadcn/ui components (22 files)
 │   │   ├── success-animation.tsx # Confetti celebration
 │   │   └── theme-provider.tsx    # Dark/light mode
 │   │
@@ -352,6 +458,16 @@ npm run dev
 # 5. Open http://localhost:3000
 ```
 
+### Build for Production
+
+```bash
+# Build optimized production bundle
+npm run build
+
+# Start production server
+npm run start
+```
+
 ---
 
 ## ⚙️ Environment Variables
@@ -403,6 +519,8 @@ CREATE TABLE feedback (
     q4 INTEGER NOT NULL,
     q5 INTEGER NOT NULL,
     q6 INTEGER NOT NULL,
+    total INTEGER,                -- Sum of all ratings
+    percent DECIMAL,              -- Percentage score
     comment TEXT,                 -- Optional feedback text
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -447,6 +565,8 @@ CREATE TABLE submission_logs (
 CREATE INDEX idx_submission_logs_ip ON submission_logs(ip_address);
 CREATE INDEX idx_submission_logs_fingerprint ON submission_logs(fingerprint_hash);
 CREATE INDEX idx_submission_logs_created ON submission_logs(created_at DESC);
+CREATE INDEX idx_feedback_subject ON feedback(subject);
+CREATE INDEX idx_feedback_created ON feedback(created_at DESC);
 ```
 
 ---
@@ -467,6 +587,7 @@ CREATE INDEX idx_submission_logs_created ON submission_logs(created_at DESC);
 |--------|----------|-------------|
 | `GET` | `/api/subjects` | Get all subjects |
 | `POST` | `/api/subjects` | Create new subject |
+| `PUT` | `/api/subjects/[id]` | Update subject |
 | `DELETE` | `/api/subjects/[id]` | Delete subject by ID |
 
 ### Protection Endpoints
@@ -484,11 +605,12 @@ CREATE INDEX idx_submission_logs_created ON submission_logs(created_at DESC);
 | `GET` | `/api/settings/protection` | Get protection status |
 | `POST` | `/api/settings/protection` | Toggle protection on/off |
 
-### Export Endpoints
+### Admin Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/export/csv` | Export feedback as CSV |
+| `POST` | `/api/admin/password` | Change admin password |
+| `POST` | `/api/admin/enter` | Validate admin entry |
 
 ---
 
@@ -511,7 +633,7 @@ CREATE INDEX idx_submission_logs_created ON submission_logs(created_at DESC);
 
 ### Protected Routes
 
-All `/admin/*` routes are protected by the `AdminLayout` component:
+All `/admin/*` routes are protected by the `AdminSidebar` component:
 
 ```tsx
 // Automatic redirect if not authenticated
@@ -539,7 +661,8 @@ if (status === "unauthenticated") {
 |-------|-----------|-------------|
 | `/admin` | `admin/page.tsx` | Dashboard with analytics |
 | `/admin/login` | `admin/login/page.tsx` | Admin authentication |
-| `/admin/feedback` | `admin/feedback/page.tsx` | View all feedback |
+| `/admin/feedback` | `admin/feedback/page.tsx` | View all feedback (Data Stream) |
+| `/admin/leaderboard` | `admin/leaderboard/page.tsx` | Subject rankings & modal |
 | `/admin/subjects` | `admin/subjects/page.tsx` | Manage subjects |
 | `/admin/logs` | `admin/logs/page.tsx` | Submission logs |
 | `/admin/settings` | `admin/settings/page.tsx` | System configuration |
@@ -558,6 +681,7 @@ if (status === "unauthenticated") {
 --neon-cyan: #00f0ff;
 --neon-purple: #a855f7;
 --neon-pink: #ec4899;
+--neon-green: #00ff88;
 ```
 
 ### Custom CSS Classes
@@ -570,6 +694,7 @@ if (status === "unauthenticated") {
 | `.pulse-dot` | Animated status indicator |
 | `.data-module` | Data panel styling |
 | `.scan-line` | Moving scan line effect |
+| `.neon-text` | Glowing neon text effect |
 
 ---
 
@@ -605,6 +730,8 @@ if (status === "unauthenticated") {
 - [ ] Test admin login and dashboard
 - [ ] Verify reCAPTCHA is working
 - [ ] Check OG image preview on social media
+- [ ] Test PDF and Excel exports
+- [ ] Verify leaderboard modal functionality
 
 ---
 
@@ -620,6 +747,23 @@ To test your previews:
 - [Facebook Debugger](https://developers.facebook.com/tools/debug/)
 - [Twitter Card Validator](https://cards-dev.twitter.com/validator)
 - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/)
+
+---
+
+## 🔧 Admin Components
+
+### Reusable Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `AdminSidebar` | `sidebar.tsx` | Collapsible navigation with auth |
+| `ExportDialog` | `export-dialog.tsx` | PDF & Excel generation |
+| `AuthGuard` | `auth-guard.tsx` | Route protection wrapper |
+| `ConfirmDialog` | `confirm-dialog.tsx` | Delete confirmations |
+| `EmptyState` | `empty-state.tsx` | No data placeholder |
+| `DashboardSkeleton` | `skeletons.tsx` | Loading state animations |
+
+---
 
 ## 👨‍💻 Credits
 
