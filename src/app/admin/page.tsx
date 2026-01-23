@@ -7,7 +7,7 @@ import { motion } from "framer-motion"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { DashboardSkeleton } from "@/components/admin/skeletons"
 import {
-    TrendingUp,
+    Trophy,
     Users,
     Star,
     BarChart3,
@@ -19,6 +19,7 @@ import {
     Zap,
     Database,
     Clock,
+    Atom, Cpu, Calculator, Palette, Globe2, Landmark, Languages, Music, Stethoscope, Briefcase, Dna
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -32,17 +33,27 @@ import {
     PieChart,
     Pie,
     Cell,
-    BarChart,
-    Bar,
-    RadarChart,
-    Radar,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
 } from "recharts"
 import type { Feedback } from "@/lib/types"
 
 const NEON_COLORS = ["#00f0ff", "#a855f7", "#ff0080", "#00ff88", "#ff6b00"]
+
+// Icon mapping function
+const getSubjectIcon = (subject: string) => {
+    const s = subject.toLowerCase()
+    if (s.includes('computer') || s.includes('tech') || s.includes('code') || s.includes('ai')) return <Cpu className="w-4 h-4 text-cyan-400" />
+    if (s.includes('science') || s.includes('physics') || s.includes('chem')) return <Atom className="w-4 h-4 text-purple-400" />
+    if (s.includes('bio') || s.includes('eco') || s.includes('nature')) return <Dna className="w-4 h-4 text-green-400" />
+    if (s.includes('math') || s.includes('calc')) return <Calculator className="w-4 h-4 text-orange-400" />
+    if (s.includes('art') || s.includes('design') || s.includes('paint')) return <Palette className="w-4 h-4 text-pink-400" />
+    if (s.includes('history') || s.includes('social')) return <Landmark className="w-4 h-4 text-yellow-400" />
+    if (s.includes('geo') || s.includes('earth')) return <Globe2 className="w-4 h-4 text-blue-400" />
+    if (s.includes('english') || s.includes('lang')) return <Languages className="w-4 h-4 text-red-400" />
+    if (s.includes('music') || s.includes('sound')) return <Music className="w-4 h-4 text-violet-400" />
+    if (s.includes('doctor') || s.includes('health') || s.includes('med')) return <Stethoscope className="w-4 h-4 text-teal-400" />
+    if (s.includes('business') || s.includes('commerce')) return <Briefcase className="w-4 h-4 text-indigo-400" />
+    return <BookOpen className="w-4 h-4 text-white/50" />
+}
 
 // Animated counter hook
 function useAnimatedCounter(end: number, duration: number = 2500) {
@@ -129,23 +140,19 @@ export default function AdminDashboard() {
     }, {})
     const pieData = Object.entries(roleDistribution).map(([name, value]) => ({ name, value }))
 
-    const questionAvg = {
-        q1: feedback.length ? feedback.reduce((a, f) => a + f.q1, 0) / feedback.length : 0,
-        q2: feedback.length ? feedback.reduce((a, f) => a + f.q2, 0) / feedback.length : 0,
-        q3: feedback.length ? feedback.reduce((a, f) => a + f.q3, 0) / feedback.length : 0,
-        q4: feedback.length ? feedback.reduce((a, f) => a + f.q4, 0) / feedback.length : 0,
-        q5: feedback.length ? feedback.reduce((a, f) => a + f.q5, 0) / feedback.length : 0,
-        q6: feedback.length ? feedback.reduce((a, f) => a + f.q6, 0) / feedback.length : 0,
-    }
-
-    const radarData = [
-        { subject: "Topic", value: questionAvg.q1, fullMark: 5 },
-        { subject: "Comm", value: questionAvg.q2, fullMark: 5 },
-        { subject: "Creative", value: questionAvg.q3, fullMark: 5 },
-        { subject: "Clarity", value: questionAvg.q4, fullMark: 5 },
-        { subject: "Enthus", value: questionAvg.q5, fullMark: 5 },
-        { subject: "Overall", value: questionAvg.q6, fullMark: 5 },
-    ]
+    // Top 5 subjects by total score
+    const subjectTotals: Record<string, number> = {}
+    feedback.forEach((f) => {
+        const subject = f.subject || f.project?.name
+        if (subject) {
+            subjectTotals[subject] = (subjectTotals[subject] || 0) + f.total
+        }
+    })
+    const topSubjects = Object.entries(subjectTotals)
+        .map(([name, totalScore]) => ({ name, totalScore }))
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .slice(0, 5)
+    const maxScore = topSubjects.length > 0 ? topSubjects[0].totalScore : 1
 
     const weeklyData = Array.from({ length: 7 }, (_, i) => {
         const date = new Date()
@@ -270,7 +277,7 @@ export default function AdminDashboard() {
                     </div>
                 </motion.div>
 
-                {/* Radar Chart - Question Ratings */}
+                {/* Top 5 Subjects Leaderboard */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -279,37 +286,57 @@ export default function AdminDashboard() {
                 >
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="font-orbitron text-sm text-white tracking-wide">RATING ANALYSIS</h3>
-                            <p className="font-mono text-xs text-white/40">Questions breakdown</p>
+                            <h3 className="font-orbitron text-sm text-white tracking-wide">TOP 5 SUBJECTS</h3>
+                            <p className="font-mono text-xs text-white/40">Ranked by total score</p>
                         </div>
-                        <TrendingUp className="w-5 h-5 text-purple-400" />
+                        <Trophy className="w-5 h-5 text-yellow-400" />
                     </div>
-                    <div className="h-56 chart-container rounded-lg">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart data={radarData}>
-                                <PolarGrid stroke="rgba(0,240,255,0.2)" />
-                                <PolarAngleAxis
-                                    dataKey="subject"
-                                    stroke="rgba(255,255,255,0.5)"
-                                    fontSize={10}
-                                    fontFamily="JetBrains Mono"
-                                />
-                                <PolarRadiusAxis
-                                    angle={30}
-                                    domain={[0, 5]}
-                                    stroke="rgba(255,255,255,0.3)"
-                                    fontSize={8}
-                                />
-                                <Radar
-                                    name="Rating"
-                                    dataKey="value"
-                                    stroke="#a855f7"
-                                    fill="#a855f7"
-                                    fillOpacity={0.3}
-                                    strokeWidth={2}
-                                />
-                            </RadarChart>
-                        </ResponsiveContainer>
+                    <div className="space-y-3">
+                        {topSubjects.length === 0 ? (
+                            <p className="font-mono text-sm text-white/40 py-8 text-center">No data available</p>
+                        ) : (
+                            topSubjects.map((subject, index) => (
+                                <motion.div
+                                    key={subject.name}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.4 + index * 0.1 }}
+                                    className="relative group"
+                                >
+                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5 hover:border-purple-500/40 transition-all hover:bg-purple-500/5">
+                                        {/* Rank Badge */}
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-orbitron text-sm font-bold
+                                            ${index === 0 ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30 text-yellow-400 shadow-lg shadow-yellow-500/20' :
+                                                index === 1 ? 'bg-gradient-to-br from-slate-300/20 to-slate-400/20 text-slate-300' :
+                                                    index === 2 ? 'bg-gradient-to-br from-amber-600/20 to-amber-700/20 text-amber-500' :
+                                                        'bg-white/5 text-white/40'}`}
+                                        >
+                                            {index + 1}
+                                        </div>
+                                        {/* Subject Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                {getSubjectIcon(subject.name)}
+                                                <p className="font-mono text-sm text-white truncate">{subject.name}</p>
+                                            </div>
+                                            {/* Progress Bar */}
+                                            <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${(subject.totalScore / maxScore) * 100}%` }}
+                                                    transition={{ delay: 0.5 + index * 0.1, duration: 0.8, ease: "easeOut" }}
+                                                    className={`h-full rounded-full ${index === 0 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Score */}
+                                        <div className={`font-orbitron text-lg font-bold ${index === 0 ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                                            {subject.totalScore}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))
+                        )}
                     </div>
                 </motion.div>
             </div>
