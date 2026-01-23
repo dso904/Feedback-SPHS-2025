@@ -11,7 +11,6 @@ import {
     Users,
     Star,
     BarChart3,
-    Download,
     ChevronRight,
     MessageSquare,
     BookOpen,
@@ -376,11 +375,22 @@ export default function AdminDashboard() {
                                 </Pie>
                                 <Tooltip
                                     contentStyle={{
-                                        background: 'rgba(12,12,22,0.95)',
-                                        border: '1px solid rgba(0,240,255,0.3)',
-                                        borderRadius: '8px',
+                                        background: 'rgba(10,10,18,0.98)',
+                                        border: '1px solid rgba(168,85,247,0.5)',
+                                        borderRadius: '10px',
                                         fontFamily: 'JetBrains Mono',
-                                        fontSize: '12px'
+                                        fontSize: '12px',
+                                        color: '#fff',
+                                        boxShadow: '0 0 20px rgba(168,85,247,0.3)'
+                                    }}
+                                    itemStyle={{
+                                        color: '#00f0ff',
+                                        fontWeight: 'bold'
+                                    }}
+                                    labelStyle={{
+                                        color: '#fff',
+                                        fontWeight: 'bold',
+                                        marginBottom: '4px'
                                     }}
                                 />
                             </PieChart>
@@ -457,7 +467,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8"
             >
                 <QuickAction
                     title="Data Stream"
@@ -472,13 +482,6 @@ export default function AdminDashboard() {
                     href="/admin/subjects"
                     icon={<BookOpen className="w-5 h-5" />}
                     color="purple"
-                />
-                <QuickAction
-                    title="Export Data"
-                    description="Download CSV report"
-                    href="/api/export"
-                    icon={<Download className="w-5 h-5" />}
-                    color="green"
                 />
             </motion.div>
         </AdminSidebar>

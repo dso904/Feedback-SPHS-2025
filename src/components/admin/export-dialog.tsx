@@ -64,7 +64,7 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
 
             switch (format) {
                 case "pdf":
-                    exportPDF()
+                    await exportPDF()
                     break
                 case "excel":
                     await exportExcelWithCharts()
@@ -84,95 +84,270 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         }
     }
 
-    const exportPDF = () => {
+    const exportPDF = async () => {
         const doc = new jsPDF()
         const pageWidth = doc.internal.pageSize.getWidth()
+        const pageHeight = doc.internal.pageSize.getHeight()
 
         // ═══════════════════════════════════════════════════════════════
-        // HEADER SECTION
-        // ═══════════════════════════════════════════════════════════════
-        doc.setFillColor(12, 12, 22)
-        doc.rect(0, 0, pageWidth, 45, "F")
-
-        doc.setDrawColor(0, 240, 255)
-        doc.setLineWidth(0.5)
-        doc.line(0, 0.5, pageWidth, 0.5)
-
-        doc.setDrawColor(168, 85, 247)
-        doc.line(0, 45, pageWidth, 45)
-
-        doc.setTextColor(0, 240, 255)
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "normal")
-        doc.text("SOUTH POINT HIGH SCHOOL", 14, 12)
-
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(22)
-        doc.setFont("helvetica", "bold")
-        doc.text("FEEDBACK DATA REPORT", 14, 24)
-
-        doc.setTextColor(168, 85, 247)
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "normal")
-        doc.text("Biennial Exhibition 2026 • Mission Control Export", 14, 32)
-
-        doc.setTextColor(0, 240, 255)
-        doc.setFontSize(9)
-        const dateStr = new Date().toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric"
-        })
-        doc.text(dateStr, pageWidth - 14, 12, { align: "right" })
-
-        doc.setFillColor(0, 255, 136)
-        doc.circle(pageWidth - 50, 24, 2, "F")
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(8)
-        doc.text("SYSTEM ACTIVE", pageWidth - 14, 25, { align: "right" })
-
-        // ═══════════════════════════════════════════════════════════════
-        // STATISTICS SECTION
+        // CALCULATE ANALYTICS DATA
         // ═══════════════════════════════════════════════════════════════
         const avgScore = feedback.length > 0
             ? Math.round(feedback.reduce((acc, f) => acc + f.percent, 0) / feedback.length)
             : 0
 
         const excellentCount = feedback.filter(f => f.percent >= 80).length
+        const goodCount = feedback.filter(f => f.percent >= 60 && f.percent < 80).length
+        const fairCount = feedback.filter(f => f.percent >= 40 && f.percent < 60).length
+        const poorCount = feedback.filter(f => f.percent < 40).length
+
         const roleDistribution = feedback.reduce((acc, f) => {
             acc[f.user_role] = (acc[f.user_role] || 0) + 1
             return acc
         }, {} as Record<string, number>)
         const topRole = Object.entries(roleDistribution).sort((a, b) => b[1] - a[1])[0]
 
-        doc.setFillColor(18, 18, 31)
-        doc.roundedRect(14, 52, pageWidth - 28, 28, 3, 3, "F")
+        const questionAverages = {
+            "Q1": feedback.length ? +(feedback.reduce((a, f) => a + f.q1, 0) / feedback.length).toFixed(1) : 0,
+            "Q2": feedback.length ? +(feedback.reduce((a, f) => a + f.q2, 0) / feedback.length).toFixed(1) : 0,
+            "Q3": feedback.length ? +(feedback.reduce((a, f) => a + f.q3, 0) / feedback.length).toFixed(1) : 0,
+            "Q4": feedback.length ? +(feedback.reduce((a, f) => a + f.q4, 0) / feedback.length).toFixed(1) : 0,
+            "Q5": feedback.length ? +(feedback.reduce((a, f) => a + f.q5, 0) / feedback.length).toFixed(1) : 0,
+            "Q6": feedback.length ? +(feedback.reduce((a, f) => a + f.q6, 0) / feedback.length).toFixed(1) : 0,
+        }
 
-        const statBoxWidth = (pageWidth - 28 - 12) / 4
-        const stats = [
+        // ═══════════════════════════════════════════════════════════════
+        // FETCH CHART IMAGES
+        // ═══════════════════════════════════════════════════════════════
+        let roleChartBase64 = ""
+        let ratingChartBase64 = ""
+        let barChartBase64 = ""
+
+        try {
+            const roleConfig = {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(roleDistribution),
+                    datasets: [{
+                        data: Object.values(roleDistribution),
+                        backgroundColor: ['#00f0ff', '#a855f7', '#ff0080', '#00ff88', '#ff6b00']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#fff', font: { size: 11 } } },
+                        title: { display: true, text: 'User Roles', color: '#00f0ff', font: { size: 14 } }
+                    }
+                }
+            }
+
+            const ratingConfig = {
+                type: 'pie',
+                data: {
+                    labels: ['Excellent', 'Good', 'Fair', 'Poor'],
+                    datasets: [{
+                        data: [excellentCount, goodCount, fairCount, poorCount],
+                        backgroundColor: ['#00ff88', '#a855f7', '#ff6b00', '#ff0080']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#fff', font: { size: 11 } } },
+                        title: { display: true, text: 'Performance', color: '#00ff88', font: { size: 14 } }
+                    }
+                }
+            }
+
+            const barConfig = {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(questionAverages),
+                    datasets: [{
+                        label: 'Avg Rating',
+                        data: Object.values(questionAverages),
+                        backgroundColor: ['#00f0ff', '#a855f7', '#ff0080', '#00ff88', '#ff6b00', '#00f0ff']
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, max: 5, ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#fff' }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Question Averages', color: '#a855f7', font: { size: 14 } }
+                    }
+                }
+            }
+
+            const fetchChart = async (config: object) => {
+                const url = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(config))}&backgroundColor=rgb(12,12,22)&width=300&height=200`
+                const res = await fetch(url)
+                const blob = await res.blob()
+                return new Promise<string>((resolve) => {
+                    const reader = new FileReader()
+                    reader.onloadend = () => resolve(reader.result as string)
+                    reader.readAsDataURL(blob)
+                })
+            }
+
+            roleChartBase64 = await fetchChart(roleConfig)
+            ratingChartBase64 = await fetchChart(ratingConfig)
+            barChartBase64 = await fetchChart(barConfig)
+        } catch (error) {
+            console.error("Chart generation failed:", error)
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // PAGE 1: COVER & SUMMARY
+        // ═══════════════════════════════════════════════════════════════
+
+        // Full page dark background
+        doc.setFillColor(12, 12, 22)
+        doc.rect(0, 0, pageWidth, pageHeight, "F")
+
+        // Top neon line
+        doc.setDrawColor(0, 240, 255)
+        doc.setLineWidth(1)
+        doc.line(0, 2, pageWidth, 2)
+
+        // Corner brackets - top left
+        doc.setDrawColor(0, 240, 255)
+        doc.setLineWidth(0.5)
+        doc.line(10, 10, 10, 25)
+        doc.line(10, 10, 25, 10)
+
+        // Corner brackets - top right
+        doc.line(pageWidth - 10, 10, pageWidth - 10, 25)
+        doc.line(pageWidth - 10, 10, pageWidth - 25, 10)
+
+        // Header text
+        doc.setTextColor(0, 240, 255)
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        doc.text("SOUTH POINT HIGH SCHOOL", 14, 35)
+
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(28)
+        doc.setFont("helvetica", "bold")
+        doc.text("FEEDBACK ANALYTICS", 14, 50)
+
+        doc.setTextColor(168, 85, 247)
+        doc.setFontSize(12)
+        doc.setFont("helvetica", "normal")
+        doc.text("MISSION CONTROL REPORT", 14, 60)
+
+        // Status indicator
+        doc.setFillColor(0, 255, 136)
+        doc.circle(pageWidth - 20, 40, 3, "F")
+        doc.setTextColor(0, 255, 136)
+        doc.setFontSize(8)
+        doc.text("LIVE DATA", pageWidth - 14, 42, { align: "right" })
+
+        // Date
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(9)
+        const dateStr = new Date().toLocaleDateString("en-IN", {
+            year: "numeric", month: "long", day: "numeric"
+        })
+        doc.text(dateStr, pageWidth - 14, 52, { align: "right" })
+
+        // Divider line
+        doc.setDrawColor(168, 85, 247)
+        doc.setLineWidth(0.3)
+        doc.line(14, 70, pageWidth - 14, 70)
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATISTICS CARDS
+        // ═══════════════════════════════════════════════════════════════
+        const cardWidth = 42
+        const cardHeight = 28
+        const cardY = 78
+        const cardGap = 4
+        const startX = 14
+
+        const statsCards = [
             { label: "TOTAL ENTRIES", value: feedback.length.toString(), color: [0, 240, 255] },
             { label: "AVG SCORE", value: `${avgScore}%`, color: [168, 85, 247] },
             { label: "EXCELLENT", value: excellentCount.toString(), color: [0, 255, 136] },
-            { label: "TOP ROLE", value: topRole ? topRole[0].substring(0, 10) : "N/A", color: [255, 0, 128] },
+            { label: "TOP ROLE", value: topRole ? topRole[0].substring(0, 8) : "N/A", color: [255, 0, 128] },
         ]
 
-        stats.forEach((stat, i) => {
-            const x = 17 + i * (statBoxWidth + 4)
-            doc.setTextColor(255, 255, 255)
-            doc.setFontSize(7)
-            doc.text(stat.label, x, 61)
-            doc.setTextColor(stat.color[0], stat.color[1], stat.color[2])
-            doc.setFontSize(16)
-            doc.setFont("helvetica", "bold")
-            doc.text(stat.value, x, 72)
+        statsCards.forEach((card, i) => {
+            const x = startX + i * (cardWidth + cardGap)
+
+            // Card background
+            doc.setFillColor(18, 18, 31)
+            doc.roundedRect(x, cardY, cardWidth, cardHeight, 2, 2, "F")
+
+            // Top border accent
+            doc.setDrawColor(card.color[0], card.color[1], card.color[2])
+            doc.setLineWidth(1)
+            doc.line(x + 2, cardY, x + cardWidth - 2, cardY)
+
+            // Label
+            doc.setTextColor(150, 150, 170)
+            doc.setFontSize(6)
             doc.setFont("helvetica", "normal")
+            doc.text(card.label, x + 4, cardY + 10)
+
+            // Value
+            doc.setTextColor(card.color[0], card.color[1], card.color[2])
+            doc.setFontSize(14)
+            doc.setFont("helvetica", "bold")
+            doc.text(card.value, x + 4, cardY + 22)
         })
 
         // ═══════════════════════════════════════════════════════════════
-        // DATA TABLE
+        // CHARTS SECTION
         // ═══════════════════════════════════════════════════════════════
+        const chartY = 115
+
+        // Section title
+        doc.setTextColor(0, 240, 255)
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text("◆ VISUAL ANALYTICS", 14, chartY)
+
+        // Charts row
+        if (roleChartBase64) {
+            doc.addImage(roleChartBase64, "PNG", 14, chartY + 5, 58, 45)
+        }
+        if (ratingChartBase64) {
+            doc.addImage(ratingChartBase64, "PNG", 76, chartY + 5, 58, 45)
+        }
+        if (barChartBase64) {
+            doc.addImage(barChartBase64, "PNG", 138, chartY + 5, 58, 45)
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // FOOTER - Page 1
+        // ═══════════════════════════════════════════════════════════════
+        // Bottom neon line
+        doc.setDrawColor(168, 85, 247)
+        doc.setLineWidth(0.5)
+        doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20)
+
+        // Corner brackets - bottom
+        doc.setDrawColor(168, 85, 247)
+        doc.line(10, pageHeight - 10, 10, pageHeight - 25)
+        doc.line(10, pageHeight - 10, 25, pageHeight - 10)
+        doc.line(pageWidth - 10, pageHeight - 10, pageWidth - 10, pageHeight - 25)
+        doc.line(pageWidth - 10, pageHeight - 10, pageWidth - 25, pageHeight - 10)
+
+        doc.setTextColor(100, 100, 130)
+        doc.setFontSize(7)
+        doc.setFont("helvetica", "normal")
+        doc.text("Generated by South Point Mission Control • Team Hackminors", 14, pageHeight - 10)
+        doc.text("Page 1", pageWidth - 14, pageHeight - 10, { align: "right" })
+
+        // ═══════════════════════════════════════════════════════════════
+        // PAGE 2+: DATA TABLE
+        // ═══════════════════════════════════════════════════════════════
+        doc.addPage()
+
         const tableData = feedback.map(f => [
-            (f.subject || f.project?.name || "Unknown").substring(0, 20),
+            (f.subject || f.project?.name || "Unknown").substring(0, 18),
             f.user_role,
             `${f.q1}`,
             `${f.q2}`,
@@ -185,45 +360,94 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         ])
 
         autoTable(doc, {
-            startY: 88,
+            startY: 20,
             head: [["Subject", "Role", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Score", "Date"]],
             body: tableData,
             theme: "plain",
             styles: {
-                fontSize: 8,
-                cellPadding: 3,
-                textColor: [255, 255, 255],
+                fontSize: 7,
+                cellPadding: 2.5,
+                textColor: [220, 220, 230],
                 fillColor: [12, 12, 22],
+                lineColor: [30, 30, 50],
+                lineWidth: 0.1,
             },
             headStyles: {
-                fillColor: [18, 18, 31],
+                fillColor: [18, 18, 40],
                 textColor: [0, 240, 255],
                 fontStyle: "bold",
                 fontSize: 7,
+                halign: "center",
             },
             alternateRowStyles: {
-                fillColor: [18, 18, 31],
+                fillColor: [16, 16, 28],
             },
             columnStyles: {
-                0: { cellWidth: 35 },
-                1: { cellWidth: 22 },
-                8: { textColor: [168, 85, 247], fontStyle: "bold" },
+                0: { cellWidth: 32 },
+                1: { cellWidth: 18 },
+                2: { halign: "center", cellWidth: 10 },
+                3: { halign: "center", cellWidth: 10 },
+                4: { halign: "center", cellWidth: 10 },
+                5: { halign: "center", cellWidth: 10 },
+                6: { halign: "center", cellWidth: 10 },
+                7: { halign: "center", cellWidth: 10 },
+                8: { halign: "center", cellWidth: 16, fontStyle: "bold" },
+                9: { cellWidth: 20 },
+            },
+            didParseCell: (data) => {
+                // Color code Score column
+                if (data.column.index === 8 && data.section === "body") {
+                    const val = parseInt(data.cell.text[0])
+                    if (val >= 80) data.cell.styles.textColor = [0, 255, 136]
+                    else if (val >= 60) data.cell.styles.textColor = [168, 85, 247]
+                    else if (val >= 40) data.cell.styles.textColor = [255, 107, 0]
+                    else data.cell.styles.textColor = [255, 0, 128]
+                }
             },
             didDrawPage: (data) => {
-                const pageHeight = doc.internal.pageSize.getHeight()
+                const currentPageHeight = doc.internal.pageSize.getHeight()
+                const currentPageWidth = doc.internal.pageSize.getWidth()
+
+                // Dark background for new pages
                 doc.setFillColor(12, 12, 22)
-                doc.rect(0, pageHeight - 15, pageWidth, 15, "F")
+                doc.rect(0, 0, currentPageWidth, 15, "F")
+
+                // Top line
                 doc.setDrawColor(0, 240, 255)
-                doc.setLineWidth(0.3)
-                doc.line(14, pageHeight - 15, pageWidth - 14, pageHeight - 15)
-                doc.setTextColor(100, 100, 120)
+                doc.setLineWidth(0.5)
+                doc.line(0, 1, currentPageWidth, 1)
+
+                // Header on table pages
+                doc.setTextColor(0, 240, 255)
+                doc.setFontSize(8)
+                doc.setFont("helvetica", "bold")
+                doc.text("FEEDBACK DATA REPORT", 14, 10)
+                doc.setTextColor(168, 85, 247)
                 doc.setFontSize(7)
-                doc.text("Generated by South Point Mission Control • Team Hackminors", 14, pageHeight - 6)
-                doc.text(`Page ${data.pageNumber}`, pageWidth - 14, pageHeight - 6, { align: "right" })
+                doc.setFont("helvetica", "normal")
+                doc.text("Continued...", currentPageWidth - 14, 10, { align: "right" })
+
+                // Footer
+                doc.setFillColor(12, 12, 22)
+                doc.rect(0, currentPageHeight - 12, currentPageWidth, 12, "F")
+                doc.setDrawColor(168, 85, 247)
+                doc.setLineWidth(0.3)
+                doc.line(14, currentPageHeight - 12, currentPageWidth - 14, currentPageHeight - 12)
+                doc.setTextColor(100, 100, 130)
+                doc.setFontSize(6)
+                doc.text("South Point Mission Control • Biennial Exhibition 2026", 14, currentPageHeight - 5)
+                doc.text(`Page ${data.pageNumber + 1}`, currentPageWidth - 14, currentPageHeight - 5, { align: "right" })
             },
         })
 
         doc.save(getFileName("pdf"))
+    }
+
+    // Helper to fetch chart image
+    const fetchChartImage = async (config: any) => {
+        const url = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(config))}&bkg=transparent`
+        const res = await fetch(url)
+        return await res.arrayBuffer()
     }
 
     const exportExcelWithCharts = async () => {
@@ -453,11 +677,103 @@ export function ExportDialog({ open, onOpenChange, feedback, totalCount }: Expor
         dataSheet.getColumn(11).width = 12
 
         // ═══════════════════════════════════════════════════════════════
-        // ADD CHARTS (ExcelJS supports charts!)
+        // ADD CHARTS
         // ═══════════════════════════════════════════════════════════════
 
-        // Note: ExcelJS has limited chart support in browser, but we've structured
-        // the data in a way that makes it trivial to create charts when opened in Excel
+        // 1. Role Distribution Chart
+        const roleConfig = {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(roleDistribution),
+                datasets: [{
+                    data: Object.values(roleDistribution),
+                    backgroundColor: ['#00f0ff', '#a855f7', '#ff0080', '#00ff88', '#ff6b00'],
+                    borderColor: '#12121f',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 14, family: 'Arial' }, color: 'white' } },
+                    title: { display: true, text: 'User Role Distribution', font: { size: 18, family: 'Arial' }, color: '#00f0ff' }
+                }
+            }
+        }
+
+        // 2. Question Averages Chart
+        const qConfig = {
+            type: 'bar',
+            data: {
+                labels: Object.keys(questionAverages),
+                datasets: [{
+                    label: 'Average Rating (1-5)',
+                    data: Object.values(questionAverages),
+                    backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                    borderColor: '#a855f7',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 5, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: 'white' } },
+                    x: { grid: { display: false }, ticks: { color: 'white' } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Average Ratings by Question', font: { size: 18, family: 'Arial' }, color: '#a855f7' }
+                }
+            }
+        }
+
+        // 3. Rating Distribution Chart
+        const ratingConfig = {
+            type: 'pie',
+            data: {
+                labels: Object.keys(ratingDistribution),
+                datasets: [{
+                    data: Object.values(ratingDistribution),
+                    backgroundColor: ['#00ff88', '#a855f7', '#ff0080', '#ff6b00'],
+                    borderColor: '#12121f',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 14, family: 'Arial' }, color: 'white' } },
+                    title: { display: true, text: 'Performance Distribution', font: { size: 18, family: 'Arial' }, color: '#00ff88' }
+                }
+            }
+        }
+
+        try {
+            const roleImage = await fetchChartImage(roleConfig)
+            const qImage = await fetchChartImage(qConfig)
+            const ratingImage = await fetchChartImage(ratingConfig)
+
+            const roleImageId = workbook.addImage({ buffer: roleImage, extension: 'png' })
+            const qImageId = workbook.addImage({ buffer: qImage, extension: 'png' })
+            const ratingImageId = workbook.addImage({ buffer: ratingImage, extension: 'png' })
+
+            // Place charts
+            dashboardSheet.addImage(roleImageId, {
+                tl: { col: 3, row: 11 }, // D12
+                ext: { width: 400, height: 250 }
+            })
+
+            dashboardSheet.addImage(qImageId, {
+                tl: { col: 3, row: rowNum + 3 },
+                ext: { width: 400, height: 250 }
+            })
+
+            dashboardSheet.addImage(ratingImageId, {
+                tl: { col: 3, row: ratingStartRow + 1 },
+                ext: { width: 400, height: 250 }
+            })
+
+        } catch (error) {
+            console.error("Failed to generate charts:", error)
+            // Continue without charts
+        }
 
         // Generate and save
         const buffer = await workbook.xlsx.writeBuffer()
